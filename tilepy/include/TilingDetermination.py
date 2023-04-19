@@ -88,20 +88,20 @@ def PGWinFoV(filename,ObservationTime0,PointingFile,obspar,dirName):
             if ObsBool:
                 # Round 1
                 P_GW,TC,pixlist,ipixlistHR = ComputeProbability2D(prob,highres,radecs,obspar.ReducedNside,obspar.HRnside,obspar.MinProbCut,ObservationTime,obspar.Location,obspar.max_zenith,obspar.FOV,name,pixlist,ipixlistHR,counter,dirName,obspar.UseGreytime,obspar.doplot)
-                if ((P_GW <= obspar.MinProbCut) and obspar.SecondRound):
+                if ((P_GW <= obspar.MinProbCut)and obspar.SecondRound):
                     #Try Round 2
                     #print('The minimum probability cut being', MinProbCut * 100, '% is, unfortunately, not reached.')
                     yprob1=highres
-                    P_GW, TC, pixlist1,ipixlistHR1 = ComputeProbability2D(prob,yprob1,radecs,obspar.ReducedNside,obspar.HRnside,obspar.MinProbCut,ObservationTime,obspar.Location,obspar.max_zenith,obspar.FOV,name,pixlist1,ipixlistHR1,counter,dirName,obspar.UseGreytime,obspar.doplot)
+                    P_GW, TC, pixlist1,ipixlistHR1 = ComputeProbability2D(prob,yprob1,radecs, nside,obspar.ReducedNside,obspar.HRnside,obspar.PercentCoverage, ObservationTime,obspar.Location, obspar.max_zenith,FOV, name, pixlist1,ipixlistHR1, counter,dirName,obspar.UseGreytime,obspar.doplot)
                     if ((P_GW <= obspar.MinProbCut)):
                         print('Fail')
                     else:
                         Round.append(2)
-                        P_GWarray.append(np.float('{:1.4f}'.format(np.float(P_GW))))
+                        P_GWarray.append(P_GW)
                         RAarray.append(np.float('{:3.4f}'.format(np.float(TC.ra.deg))))
                         DECarray.append(np.float('{:3.4f}'.format(np.float(TC.dec.deg))))
                         ObservationTimearray.append(str(ObservationTime).split('.')[0])
-                        counter=counter+1
+                        counter = counter + 1
                 elif(P_GW >= obspar.MinProbCut):
                     Round.append(1)
                     P_GWarray.append(np.float('{:1.4f}'.format(np.float(P_GW))))
@@ -420,11 +420,8 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                             visiGals2 = ModifyCatalogue(prob,visiGals2, obspar.FOV, sum_dP_dV,nside)
                             
                             mask, minz = FulfillsRequirement(visiGals2, obspar.max_zenith,obspar.FOV,obspar.FulFillReq_Percentage,UsePix=False)
-                            if obspar.UseGreytime:
-                                maskgrey=FulfillsRequirementGreyObservations(ObservationTime,visiGals2,obspar.Location, obspar.MoonSourceSeparation)
-                                finalGals2=visiGals2[mask&maskgrey]
-                            if not obspar.UseGreytime:
-                                finalGals2 = visiGals2[mask]
+
+                            finalGals2 = visiGals2[mask]
                             p_gal, p_gw, tGals_aux2, alreadysumipixarray2 = ComputeProbPGALIntegrateFoV(prob,ObservationTime,obspar.Location,finalGals2,False,visiGals2,tGals_aux2,sum_dP_dV, alreadysumipixarray2,nside, minz,obspar.max_zenith, obspar.FOV, counter,name,dirName,obspar.doplot)
 
                             RAarray.append(np.float('{:3.4f}'.format(np.float(finalGals2['RAJ2000'][:1]))))
@@ -592,6 +589,12 @@ def PGalinFoV_PixRegion(filename,ObservationTime0,PointingFile,galFile, paramete
 
                 if (visiPix['PIXFOVPROB'][:1] > obspar.MinProbCut):
                     n = n + 1
+                    # final galaxies within the FoV
+
+                    # print("\n=================================")
+                    # print("TARGET COORDINATES AND DETAILS...")
+                    # print("=================================")
+                    # print(finalGals['RAJ2000', 'DEJ2000', 'Bmag', 'Dist', 'Alt', 'dp_dV','dp_dV_FOV'][:1])
                     p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbPGALIntegrateFoV(prob, ObservationTime, obspar.Location,
                                                                                                visiPix, True, visiGals,
                                                                                                tGals_aux, sum_dP_dV,
@@ -770,7 +773,7 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, datasetDir, o
     UseObs = SelectObservatory_fromHotspot(filename)
     
     #ID retrieved from the filename
-    ID = filename.split('/')[-1].split('.')[1]
+    ID = filename.split('/')[-1].split('.')[0]
 
     # zenith=InputChar['Zenith']
     
@@ -832,7 +835,20 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, datasetDir, o
     print()
 
     print('Loading map from ', filename)
-    tprob, distmu, distsigma, distnorm  = LoadHealpixUNIQMap(filename)
+    #tprob, distmu, distsigma, distnorm  = LoadHealpixUNIQMap(filename)
+   
+    # Get the skymap as an ordered dict
+    import ligo.skymap.io.fits as lf
+    skymap_OD = lf.read_sky_map(filename)
+    
+    #Get the main parameters
+    tprob = skymap_OD[0]
+    has3D = False
+    print('.fits file only has 2D information')
+    #distmu = skymap_OD[1]['distmean']
+    #distsigma = skymap_OD[1]['diststd']
+    #distnorm = skymap_OD[1]['diststd']
+
     prob = hp.pixelfunc.ud_grade(tprob, obspar.ReducedNside, power=-2)
 
     nside = obspar.ReducedNside
@@ -844,12 +860,12 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, datasetDir, o
     radecs = co.SkyCoord(rapix, decpix, frame='fk5', unit=(u.deg, u.deg))
     has3D = True
 
-    if (len(distnorm) == 0):
-        print("Found a generic map without 3D information")
-        # flag the event for special treatment
-        has3D = False
-    else:
-        print("Found a 3D reconstruction")
+    #if (len(distnorm) == 0):
+    #    print("Found a generic map without 3D information")
+    #    # flag the event for special treatment
+    #    has3D = False
+    #else:
+    #    print("Found a 3D reconstruction")
 
     # print('----------   NEW FOLLOW-UP ATTEMPT   ----------')
 
