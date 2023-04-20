@@ -18,25 +18,46 @@ import datetime
 import os
 
 
-def GetUniversalSchedule(URL, date, datasetDir, outDir, Type, ObsArray):
+def GetUniversalSchedule(URL, date, datasetDir, galcatname, outDir, Type, ObsArray):
+
+    '''
+    Description: Top level function that is called by the user with specific arguments and creates a folder with the tiling schedules for several telescopes working together and visibility plots.  
+    Args:
+        URL: the url of the probability fits or  png map
+        date: the desired time for scheduling to start 
+        datasetDir: Path to the directory containting the datset like the galaxy catalog
+        outDir: Path to the output directory where the schedules and plots will eb saved 
+        Type: The type of the url given. gw if fits GW map, gbm if fits GBM map and gbmpng if PNG GBM map
+        ObsArray: array of strings containing the name of the configuration files of telescopes. 
+    '''
+
     targetType = 'Tiling'
     
-    if Type == 'gbm':
-        fitsMap, filename = GetGBMMap(URL)
 
+    if Type == 'gbmpng':
+        targetType = 'GBM_Pointing'
+        fitsMap, filename = GetGBMMap(URL)
+        name = URL.split('/')[-3]
+    elif Type == 'gbm':
+        targetType = 'GBM_Pointing'
+        fitsMap = fits.open(URL)
+        filename = URL
+        name = URL.split('all_')[1].split('_v00')[0]
     else: 
+        targetType = 'GW_Pointing'
         fitsMap, filename = GetGWMap(URL)
+        name = URL.split('/')[-3]
+
 
     prob, has3D = Check2Dor3D(fitsMap,filename)
 
     
     print("===========================================================================================")
-    name = URL.split('/')[-3]
     PointingsFile = "False"
     parameters = []
     ObservationTime = date
     outputDir = "%s/%s" % (outDir, name)
-    galaxies = datasetDir + "/GLADE.txt"
+    galaxies = datasetDir + galcatname
 
     for i in ObsArray:
         parameters.append("./configs/FollowupParameters_%s.ini" %i)
