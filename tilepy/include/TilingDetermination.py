@@ -92,7 +92,8 @@ def PGWinFoV(filename,ObservationTime0,PointingFile,obspar,dirName):
                     #Try Round 2
                     #print('The minimum probability cut being', MinProbCut * 100, '% is, unfortunately, not reached.')
                     yprob1=highres
-                    P_GW, TC, pixlist1,ipixlistHR1 = ComputeProbability2D(prob,yprob1,radecs, nside,obspar.ReducedNside,obspar.HRnside,obspar.PercentCoverage, ObservationTime,obspar.Location, obspar.max_zenith,FOV, name, pixlist1,ipixlistHR1, counter,dirName,obspar.UseGreytime,obspar.doplot)                    if ((P_GW <= obspar.MinProbCut)):
+                    P_GW, TC, pixlist1,ipixlistHR1 = ComputeProbability2D(prob,yprob1,radecs,obspar.ReducedNside,obspar.HRnside,obspar.MinProbCut, ObservationTime,obspar.Location, obspar.max_zenith,obspar.FOV, name, pixlist1,ipixlistHR1, counter,dirName,obspar.UseGreytime,obspar.doplot)
+                    if ((P_GW <= obspar.MinProbCut)):
                         print('Fail')
                     else:
                         Round.append(2)
