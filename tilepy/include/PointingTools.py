@@ -580,6 +580,7 @@ def GetGBMMap(URL):
         print(warn)
         pass
 
+    max_delay = 20
     delay = 0
     d = 0
     while delay == 0:
@@ -591,8 +592,10 @@ def GetGBMMap(URL):
             print('map is not uploaded yet... Waiting for minute:', d)
             time.sleep(60)
             delay = 0
-            if d > 20:
-                print("Waited for 20 minutes... can't wait anymore... I'm leaving")
+            if d > max_delay:
+                print(f"Waited for {max_delay} minutes... can't wait anymore... I'm leaving")
+                fitsfile = None
+                filename = None
                 break
 
     return fitsfile, filename
@@ -1166,31 +1169,26 @@ def ComputeProbability2D(prob,highres,radecs,ReducedNside,HRnside,MinProbCut, ti
 def SubstractPointings2D(tpointingFile,prob,nside,FOV,pixlist):
     radius=FOV
     print("Loading pointings from " + tpointingFile)
-    rap, decP = np.genfromtxt(tpointingFile, usecols=(2, 3), dtype="str", skip_header=1,
+    ra, dec = np.genfromtxt(tpointingFile, usecols=(2, 3), dtype="str", skip_header=1,
                                              delimiter=' ',
                                              unpack=True)  # ra, dec in degrees
-    coordinates = TransformRADec(rap, decP)
+    ra = np.atleast_1d(ra)
+    dec = np.atleast_1d(dec)
+                                      
+    coordinates = TransformRADec(ra, dec)
     P_GW = []
-    for i in range(0,len(rap)):
+    for i in range(0,len(ra)):
         t = 0.5 * np.pi - coordinates[i].dec.rad
         p = coordinates[i].ra.rad
         xyz = hp.ang2vec(t, p)
         ipix_disc = hp.query_disc(nside, xyz, np.deg2rad(radius))
         effectiveipix_disc = []
-        #print('ipixdisc',ipix_disc)
-        #print('pixlist',pixlist)
         for j in range(0, len(ipix_disc)):
             if not (ipix_disc[j] in pixlist):
                 effectiveipix_disc.append(ipix_disc[j])
             pixlist.append(ipix_disc[j])
         P_GW.append(prob[effectiveipix_disc].sum())
-        #print('Coordinates ra:', rap[i], 'dec:', decP[i], 'Pgw:', P_GW[i],'vs', prob[ipix_disc].sum())
-        #print('effectiveipix_disc',effectiveipix_disc)
-        #print('-----------')
-        #print(prob[effectiveipix_disc].sum())
-        #print(prob[ipix_disc].sum())
-        #print(prob[pixlist].sum())
-        #print('-----------')
+        print('Coordinates ra:', ra[i], 'dec:', dec[i], 'Pgw:', P_GW[i],'vs', prob[ipix_disc].sum())
     return pixlist,np.sum(P_GW)
 
 ######################################################
@@ -1906,15 +1904,20 @@ def SubstractPointings(tpointingFile,galaxies,talreadysumipixarray,tsum_dP_dV,FO
 
     PGW= []
     PGAL=[]
-
     updatedGalaxies = galaxies
-
-    for i in range(0,len(ra)):
-        #print('ra{1}', ra[i])
-        updatedGalaxies,pgwcircle,pgalcircle,talreadysumipixarray =SubstractGalaxiesCircle(updatedGalaxies,ra[i], dec[i],talreadysumipixarray,tsum_dP_dV,FOV,prob,nside)
-        PGW.append(pgwcircle)
-        PGAL.append(pgalcircle)
-        print('Coordinates ra:', ra[i], 'dec:', dec[i], 'Pgw:', pgwcircle, 'PGAL:', pgalcircle)
+    if np.isscalar(ra):
+            updatedGalaxies,pgwcircle,pgalcircle,talreadysumipixarray =SubstractGalaxiesCircle(updatedGalaxies,ra, dec,talreadysumipixarray,tsum_dP_dV,FOV,prob,nside)
+            PGW.append(pgwcircle)
+            PGAL.append(pgalcircle)
+            print('Coordinates ra:', ra, 'dec:', dec, 'Pgw:', pgwcircle, 'PGAL:', pgalcircle)
+    else: 
+        for i, coord in enumerate(coordinates):
+            ra=coord.ra.deg
+            dec=coord.dec.deg
+            updatedGalaxies,pgwcircle,pgalcircle,talreadysumipixarray =SubstractGalaxiesCircle(updatedGalaxies,ra, dec,talreadysumipixarray,tsum_dP_dV,FOV,prob,nside)
+            PGW.append(pgwcircle)
+            PGAL.append(pgalcircle)
+            print('Coordinates ra:', ra, 'dec:', dec, 'Pgw:', pgwcircle, 'PGAL:', pgalcircle)
     return ra,dec,updatedGalaxies, PGW, PGAL,talreadysumipixarray
 
 def SubstractGalaxiesCircle(galaux, ra,dec ,talreadysumipixarray,tsum_dP_dV,FOV,prob,nside):

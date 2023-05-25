@@ -81,9 +81,9 @@ def PGWinFoV(filename,ObservationTime0,PointingFile,obspar,dirName):
         NightDarkRuns = NightDarkObservation(ObservationTime0,obspar)
 
     counter=0
-    for j in range(0, len(NightDarkRuns)):
+    for j, NightDarkRun in enumerate(NightDarkRuns):
         if (len(ObservationTimearray) < obspar.MaxRuns):
-            ObservationTime = NightDarkRuns[j]
+            ObservationTime = NightDarkRun
             ObsBool,yprob=ZenithAngleCut(prob,nside,ObservationTime,obspar.MinProbCut,obspar.max_zenith,obspar.Location, obspar.MoonSourceSeparation, obspar.UseGreytime)
             if ObsBool:
                 # Round 1
@@ -352,8 +352,8 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
         # tGals_aux = tGals
         ra, dec, tGals, AlreadyObservedPgw, AlreadyObservedPgal,alreadysumipixarray1 = SubstractPointings(PointingFile, tGals0,alreadysumipixarray1,sum_dP_dV,obspar.FOV,prob,nside)
         #for second round
-        ra, dec, tGals, AlreadyObservedPgw, AlreadyObservedPgal,alreadysumipixarray2 = SubstractPointings(PointingFile, tGals0,alreadysumipixarray1,sum_dP_dV,obspar.FOV,prob,nside)
-        MaxRuns = obspar.MaxRuns - len(ra)
+        #ra, dec, tGals, AlreadyObservedPgw, AlreadyObservedPgal,alreadysumipixarray2 = SubstractPointings(PointingFile, tGals0,alreadysumipixarray1,sum_dP_dV,obspar.FOV,prob,nside)
+        MaxRuns = obspar.MaxRuns - len(np.atleast_1d(ra))
         sumPGW = sum(AlreadyObservedPgw)
         sumPGAL = sum(AlreadyObservedPgal)
 
@@ -364,7 +364,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
         print(
             name, "Total GW probability already covered: ", sumPGW,
             "Total Gal probability already covered: ",
-            sumPGAL, "Number of effective pointings already done: ",len(ra))
+            sumPGAL, "Number of effective pointings already done: ",len(np.atleast_1d(ra)))
 
     ##########################
 
@@ -392,9 +392,9 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
 
     totalProb=0.
     counter=0
-    for j in range(0, len(NightDarkRuns)):
+    for j, NightDarkRun in enumerate(NightDarkRuns):
         if (len(ObservationTimearray) < obspar.MaxRuns):
-            ObservationTime = NightDarkRuns[j]
+            ObservationTime = NightDarkRun
             visible, altaz, tGals_aux = VisibleAtTime(ObservationTime, tGals_aux, obspar.max_zenith, obspar.Location)
 
             if (visible):
@@ -536,7 +536,7 @@ def PGalinFoV_PixRegion(filename,ObservationTime0,PointingFile,galFile, obspar,d
     else:
         # tGals_aux = tGals
         ra, dec, tGals, AlreadyObservedPgw, AlreadyObservedPgal,alreadysumipixarray1 = SubstractPointings(PointingFile, tGals0,alreadysumipixarray1,sum_dP_dV,obspar.FOV,prob,nside)
-        MaxRuns = obspar.MaxRuns - len(ra)
+        MaxRuns = obspar.MaxRuns - len(np.atleast_1d(ra))
         sumPGW = sum(AlreadyObservedPgw)
         sumPGAL = sum(AlreadyObservedPgal)
 
@@ -547,7 +547,7 @@ def PGalinFoV_PixRegion(filename,ObservationTime0,PointingFile,galFile, obspar,d
         print(
             name, "Total GW probability already covered: ", sumPGW,
             "Total Gal probability already covered: ",
-            sumPGAL, "Number of effective pointings already done: ",len(ra))
+            sumPGAL, "Number of effective pointings already done: ",len(np.atleast_1d(ra)))
     #########################
 
 

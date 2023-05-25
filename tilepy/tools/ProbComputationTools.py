@@ -4,7 +4,7 @@ from tilepy.include.PointingTools import (LoadHealpixMap,CorrelateGalaxies_LVC,S
 import healpy as hp
 
 
-def ComputeCoveredProbability(GWFile, PointingsFile, galFile="../dataset/GLADE.txt", FOV = 2.0, MinimumProbCutForCatalogue = 0.01):
+def ComputeCoveredProbability(GWFile, PointingsFile, galFile="../dataset/GLADEplus.h5", FOV = 2.0, MinimumProbCutForCatalogue = 0.01):
 
     print("===========================================================================================")
     print("Starting the computation of covered probability from the following files\n")

@@ -48,19 +48,19 @@ def LoadPointingsGW(tpointingFile):
     time1,time2, ra, dec = np.genfromtxt(tpointingFile, usecols=(0, 1, 2,3), dtype="str", skip_header=1,
                                              delimiter=' ',
                                              unpack=True)  # ra, dec in degrees
+
     time1 = np.atleast_1d(time1)
     time2 = np.atleast_1d(time2)
     ra = np.atleast_1d(ra)
     dec = np.atleast_1d(dec)
 
+    print('time1',time1)
+    print('time2',time2)
     time = []
-    for i in range(len(time1)):
-        try:
-            time.append((time1[i] + ' ' + time2[i]).split('"')[1])
-        except IndexError:
-            time.append((time1 + ' ' + time2).split('"')[1])
-            break
+    for i, time1 in enumerate(time1):
+        time.append(time1.split('"')[1] + ' ' + time2[i].split('"')[0])
 
+    print(time)
     ra = ra.astype(float)
     dec = dec.astype(float)
     coordinates = co.SkyCoord(ra,dec, frame='fk5', unit=(u.deg, u.deg))
@@ -80,7 +80,7 @@ def LoadPointingsGAL(tpointingFile):
     ra = np.atleast_1d(ra)
     dec = np.atleast_1d(dec)
     time = []
-    for i in range(len(time1)):
+    for i, time1 in enumerate(time1):
         try:
             time.append((time1[i] + ' ' + time2[i]).split('"')[1])
         except IndexError:
@@ -106,8 +106,7 @@ def PointingPlotting(prob, obspar, name,dirName,PointingsFile1, ObsArray, filena
     print('----------   PLOTTING THE SCHEDULING   ----------')
     print('Total covered probability with the scheduled tiles is PGW= {0:.5f}'.format(sum(Probarray1)))
     converted_time1=[]
-    for i in range(0,len(ObservationTimearray1)):
-        time1 = ObservationTimearray1[i]
+    for i, time1 in enumerate(ObservationTimearray1):
         try:
             converted_time1.append(datetime.datetime.strptime(time1, '%Y-%m-%d %H:%M:%S.%f'))
         except ValueError:
@@ -138,7 +137,7 @@ def PlotPointings(prob, time, targetCoord, Totalprob, nside, obspar, name, dirNa
 
     # translate pixel indices to coordinates
     ipix_disc = hp.query_disc(nside, xyz, np.deg2rad(FOV))
-
+    print(time)
     if (doplot):
 
         tt, pp = hp.pix2ang(nside, ipix_disc)
@@ -438,8 +437,7 @@ def PointingPlottingGWCTA(filename, ID, outDir, SuggestedPointings,FOV):
     print('Total probability of map 1 that maximises PGW= {0:.5f}'.format(sum(Probarray)))
 
     converted_time=[]
-    for i in range(0,len(ObservationTimearray)):
-        time = ObservationTimearray[i]
+    for i, time in enumerate(ObservationTimearray):
         try:
             converted_time.append(datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f'))
         except ValueError:
