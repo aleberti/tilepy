@@ -16,15 +16,15 @@ from .ObservingTimes import ObtainSingleObservingTimes
 import matplotlib.pyplot as plt
 import numpy as np
 import healpy as hp
-from astropy.table import Table
+import pytz
 from astropy import units as u
 from astropy.utils import iers
 import astropy.coordinates as co
 from astropy.time import Time
-import pytz
+from astropy.table import Table
 from astropy.coordinates import SkyCoord, AltAz
 from astropy.coordinates import get_moon
-from astropy.io import fits
+from astropy.io import fits, ascii
 import datetime
 import numpy.ma as ma
 from six.moves import configparser
@@ -2846,7 +2846,6 @@ def FillSummary(outfilename, ID, doneObservations, totalPoswindow, foundFirst, n
 
 def ProduceSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, typeSimu, datasetDir, outDir):
 
-    print(SuggestedPointings)
     # Where to save results
     dirNameFile = outDir + '/SummaryFile/'
     print(dirNameFile)
@@ -2871,6 +2870,9 @@ def ProduceSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, t
     maskClean = (SuggestedPointings['ObsInfo'] == 'True')
     SuggestedPointingsC = SuggestedPointings[maskClean]
     SuggestedPointingsC.remove_column('ObsInfo')
+
+    print('Source coordinates', Source)
+    print(SuggestedPointingsC)
 
     Pointings = SkyCoord(SuggestedPointingsC['RA[deg]'], SuggestedPointingsC['DEC[deg]'], frame='fk5',
                          unit=(u.deg, u.deg))
