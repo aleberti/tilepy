@@ -386,7 +386,7 @@ class ObservationParameters(object):
                  Duration=None, MinDuration=None, UseGreytime=None, MinSlewing=None, online=False,
                  MinimumProbCutForCatalogue=None, MinProbCut=None, doplot=None, SecondRound=None,
                  FulFillReq_Percentage=None, PercentCoverage=None, ReducedNside=None, HRnside=None,
-                 Mangrove=None):
+                 Mangrove=None, url=None,ObsTime=None,datasetDir=None,galcatname=None,outDir=None,PointingsFile=None,alertType=None,LocCut=None):
 
         self.name = name
         self.Lat = Lat
@@ -427,6 +427,16 @@ class ObservationParameters(object):
         self.HRnside = HRnside
         self.Mangrove = Mangrove
 
+        # Parsed args
+        self.url = url 
+        self.ObsTime = ObsTime
+        self.datasetDir = datasetDir
+        self.galcatname = galcatname
+        self.outDir = outDir
+        self.PointingsFile = PointingsFile
+        self.alertType = alertType
+        self.LocCut = LocCut
+
     def __str__(self):
         txt = ''
         txt += '----------------- Main parsed observation parameters ----------------- \n'.format()
@@ -442,6 +452,17 @@ class ObservationParameters(object):
         txt += 'Low Resolution NSIDE: {}\n'.format(self.ReducedNside)
         # txt += '----------------------------------------------------------------------\n'.format()
         return txt
+
+    def add_parsed_args(self, url,ObsTime,datasetDir,galcatname,outDir,PointingsFile,alertType,LocCut):
+        # Parsed args in command line
+        self.url = url 
+        self.ObsTime = ObsTime 
+        self.datasetDir = datasetDir
+        self.galcatname = galcatname
+        self.outDir = outDir
+        self.PointingsFile = PointingsFile
+        self.alertType = alertType
+        self.LocCut = LocCut
 
     def from_configfile(self, filepath):
 
