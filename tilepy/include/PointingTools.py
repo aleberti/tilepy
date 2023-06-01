@@ -741,7 +741,7 @@ def order_inds2uniq(order, inds):
     return uniq
 
 
-def Check2Dor3D(fitsfile, filename,distcut):
+def Check2Dor3D(fitsfile, filename, distcut):
 
     distnorm = []
     tdistmean = 0
@@ -772,9 +772,6 @@ def Check2Dor3D(fitsfile, filename,distcut):
 
     if tdistmean+2*tdiststd > distcut:
         has3D = False
-    
-    # Obtain the total area to decide weather return or do a follow-up 
-
     return prob, has3D
 
 

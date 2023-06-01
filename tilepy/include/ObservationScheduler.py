@@ -50,8 +50,8 @@ def GetSchedule_ConfigFile(obspar):
 
     prob, has3D = Check2Dor3D(fitsMap, filename, obspar.distCut)
     if obspar.LocCut != None:
-        ra, dec, a, b, pa, area = lsp.ellipse.find_ellipse(prob, cl=50)
-        if (obspar.LocCut== 'loose' and area > 700) or (obspar.LocCut== 'std' and area > 100):
+        ra, dec, a, b, pa, area = lsp.ellipse.find_ellipse(prob, cl=90)
+        if (obspar.LocCut== 'loose' and area > 10000) or (obspar.LocCut== 'std' and area > 1000):
             return
 
     print("===========================================================================================")
