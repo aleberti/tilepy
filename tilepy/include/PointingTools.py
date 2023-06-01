@@ -754,7 +754,6 @@ def Check2Dor3D(fitsfile, filename,distcut):
     else:
         prob = hp.read_map(fitsfile, field=range(1))
 
-    print('HERE',tdistmean,tdiststd)
     has3D = True
     if len(distnorm) == 0:
         has3D = False
@@ -773,6 +772,8 @@ def Check2Dor3D(fitsfile, filename,distcut):
 
     if tdistmean+2*tdiststd > distcut:
         has3D = False
+    
+    # Obtain the total area to decide weather return or do a follow-up 
 
     return prob, has3D
 

@@ -17,6 +17,7 @@ from astropy import units as u
 import datetime
 import os
 import json
+import ligo.skymap.postprocess as lsp
 
 
 def GetSchedule_ConfigFile(obspar):
@@ -48,6 +49,10 @@ def GetSchedule_ConfigFile(obspar):
         name = URL.split('/')[-3]
 
     prob, has3D = Check2Dor3D(fitsMap, filename, obspar.distCut)
+    if obspar.LocCut != None:
+        ra, dec, a, b, pa, area = lsp.ellipse.find_ellipse(prob, cl=50)
+        if (obspar.LocCut== 'loose' and area > 700) or (obspar.LocCut== 'std' and area > 100):
+            return
 
     print("===========================================================================================")
 
@@ -169,6 +174,7 @@ def GetSchedule_funcarg(URL, date, datasetDir, galcatname, outDir, targetType, n
         name = URL.split('/')[-3]
 
     prob, has3D = Check2Dor3D(fitsMap, filename, distcut)
+
 
     print("===========================================================================================")
     PointingsFile = "False"
