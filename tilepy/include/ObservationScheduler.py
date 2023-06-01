@@ -47,7 +47,7 @@ def GetSchedule_ConfigFile(obspar):
         fitsMap, filename = GetGWMap(URL)
         name = URL.split('/')[-3]
 
-    prob, has3D = Check2Dor3D(fitsMap, filename)
+    prob, has3D = Check2Dor3D(fitsMap, filename, obspar.distCut)
 
     print("===========================================================================================")
 
@@ -134,7 +134,7 @@ def GetSchedule_funcarg(URL, date, datasetDir, galcatname, outDir, targetType, n
                         MaxMoonSourceSeparation, max_zenith, FOV, MaxRuns, MaxNights,
                         Duration, MinDuration, UseGreytime, MinSlewing, online,
                         MinimumProbCutForCatalogue, MinProbCut, doplot, SecondRound,
-                        FulFillReq_Percentage, PercentCoverage, ReducedNside, HRnside,
+                        FulFillReq_Percentage, PercentCoverage, ReducedNside, HRnside,distcut,
                         Mangrove):
     """
     TTop level function that is called by the user with specific arguments and creates a folder with the tiling schedules for a single telescope and visibility plots.  
@@ -168,7 +168,7 @@ def GetSchedule_funcarg(URL, date, datasetDir, galcatname, outDir, targetType, n
         fitsMap, filename = GetGWMap(URL)
         name = URL.split('/')[-3]
 
-    prob, has3D = Check2Dor3D(fitsMap, filename)
+    prob, has3D = Check2Dor3D(fitsMap, filename, distcut)
 
     print("===========================================================================================")
     PointingsFile = "False"

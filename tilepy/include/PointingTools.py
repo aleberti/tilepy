@@ -384,7 +384,7 @@ class ObservationParameters(object):
                  HorizonMoon=None, gMoonGrey=None, gMoonPhase=None, MoonSourceSeparation=None,
                  MaxMoonSourceSeparation=None, max_zenith=None, FOV=None, MaxRuns=None, MaxNights=None,
                  Duration=None, MinDuration=None, UseGreytime=None, MinSlewing=None, online=False,
-                 MinimumProbCutForCatalogue=None, MinProbCut=None, doplot=None, SecondRound=None,
+                 MinimumProbCutForCatalogue=None, MinProbCut=None, distCut=None, doplot=None, SecondRound=None,
                  FulFillReq_Percentage=None, PercentCoverage=None, ReducedNside=None, HRnside=None,
                  Mangrove=None, url=None,ObsTime=None,datasetDir=None,galcatname=None,outDir=None,PointingsFile=None,alertType=None,LocCut=None):
 
@@ -419,6 +419,7 @@ class ObservationParameters(object):
         self.online = online
         self.MinimumProbCutForCatalogue = MinimumProbCutForCatalogue
         self.MinProbCut = MinProbCut
+        self.distCut = distCut
         self.doplot = doplot
         self.SecondRound = SecondRound
         self.FulFillReq_Percentage = FulFillReq_Percentage
@@ -509,6 +510,7 @@ class ObservationParameters(object):
         self.MinimumProbCutForCatalogue = float(parser.get(
             section, 'minimumprobcutforcatalogue', fallback=0))
         self.MinProbCut = float(parser.get(section, 'minprobcut', fallback=0))
+        self.distCut = float(parser.get(section, 'distcut', fallback=0))
         self.doplot = (parser.getboolean(section, 'doplot', fallback=None))
         self.SecondRound = (parser.getboolean(
             section, 'secondround', fallback=None))
@@ -739,7 +741,7 @@ def order_inds2uniq(order, inds):
     return uniq
 
 
-def Check2Dor3D(fitsfile, filename):
+def Check2Dor3D(fitsfile, filename,distcut):
 
     distnorm = []
     tdistmean = 0
@@ -748,9 +750,11 @@ def Check2Dor3D(fitsfile, filename):
         prob, distmu, distsigma, distnorm = hp.read_map(filename,
                                                         field=range(4))
         tdistmean = fitsfile[1].header['DISTMEAN']
+        tdiststd= fitsfile[1].header['DISTSTD']
     else:
         prob = hp.read_map(fitsfile, field=range(1))
 
+    print('HERE',tdistmean,tdiststd)
     has3D = True
     if len(distnorm) == 0:
         has3D = False
@@ -767,7 +771,7 @@ def Check2Dor3D(fitsfile, filename):
     if InsidePlane:
         has3D = False
 
-    if tdistmean > 150:
+    if tdistmean+2*tdiststd > distcut:
         has3D = False
 
     return prob, has3D
