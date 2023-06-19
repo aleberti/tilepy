@@ -22,7 +22,7 @@ from astropy import units as u
 from astropy.coordinates import EarthLocation, get_sun
 from astropy.coordinates import SkyCoord, AltAz
 from astropy.coordinates import get_moon
-from astropy.io import fits
+from astropy.io import fits, ascii
 from astropy.table import Table
 from astropy.time import Time
 from astropy.utils import iers
@@ -2916,8 +2916,7 @@ def ZenithAngleCut_TwoTimes(prob, nside, time, time1, minProbcut, maxZenith, obs
     return ObsBool, yprob
 
 
-def ComputeProbability2D_SelectClusters(prob, highres, radecs, TotalExposure, time,
-                                        DelayObs, interObsSlew, obspar, ID, ipixlist, ipixlistHR, counter, datasetDir, outDir, useGreytime, plot):
+def ComputeProbability2D_SelectClusters(prob, highres, radecs, conf, time, DelayObs, interObsSlew, obspar, ID, ipixlist, ipixlistHR, counter, datasetDir, outDir, useGreytime, plot):
     '''
     Compute probability in 2D by taking the highest value pixel
     '''
@@ -2988,13 +2987,13 @@ def ComputeProbability2D_SelectClusters(prob, highres, radecs, TotalExposure, ti
 
     # Fill a the column EXPOSURE column. Corresponds to the time that one needs to observe to get 5sigma for the highest of the list
     # Three cases depending on the IRFs that should be used (60,40,20)
-    grbSensPath = '/grbsens_output_v3_Sep_2022/alpha_configuration/'
+    grbSensPath = '/grbsens_output_v3_Sep_2022/'+ conf +'_configuration/grbsens-5.0sigma_t1s-t16384s_irf-'
+    print(datasetDir + grbSensPath +obspar.name+ "_z60_0.5h.txt")
     if (np.any(sortcat['ZENITH_INI'] > 55)):
         # ObsCase, texp60 = ObtainSingleObservingTimes(TotalExposure, DelayObs, interObsSlew, ID, obspar,datasetDir, zenith=60)
         # if observatory.name == "North":
         # "sensitivity-5sigma_irf-North_z20_0.5.txt"
-        grbSensFile = datasetDir + grbSensPath + \
-            "grbsens-5.0sigma_t1s-t16384s_irf-North_z20_0.5h.txt"
+        grbSensFile = datasetDir + grbSensPath +obspar.name+ "_z60_0.5h.txt"
         grb_result = GetExposureForDetection(
             grbSensFile, grbFilename, DelayObs)
         print(grb_result)
@@ -3022,8 +3021,7 @@ def ComputeProbability2D_SelectClusters(prob, highres, radecs, TotalExposure, ti
         # ObsCase, texp40 = ObtainSingleObservingTimes(TotalExposure, DelayObs, interObsSlew, ID, obspar,datasetDir, zenith=40)
 
         # "sensitivity-5sigma_irf-North_z20_0.5.txt"
-        grbSensFile = datasetDir + grbSensPath + \
-            "grbsens-5.0sigma_t1s-t16384s_irf-North_z20_0.5h.txt"
+        grbSensFile = datasetDir + grbSensPath + obspar.name + "_z40_0.5h.txt"
         grb_result = GetExposureForDetection(
             grbSensFile, grbFilename, DelayObs)
         print(grb_result)
@@ -3054,8 +3052,7 @@ def ComputeProbability2D_SelectClusters(prob, highres, radecs, TotalExposure, ti
         # ObsCase, texp20 = ObtainSingleObservingTimes(TotalExposure, DelayObs, interObsSlew, ID, obspar, datasetDir, zenith=20)
 
         # "sensitivity-5sigma_irf-North_z20_0.5.txt"
-        grbSensFile = datasetDir + grbSensPath + \
-            "grbsens-5.0sigma_t1s-t16384s_irf-North_z20_0.5h.txt"
+        grbSensFile = datasetDir + grbSensPath + obspar.name + "_z20_0.5h.txt"
         grb_result = GetExposureForDetection(
             grbSensFile, grbFilename, DelayObs)
         if (grb_result['obs_time'] == -1):
@@ -3079,7 +3076,7 @@ def ComputeProbability2D_SelectClusters(prob, highres, radecs, TotalExposure, ti
 
     # Check how many false values there are in the array
     # false_count = sum(not i for i in sortcat['EXPOSURE'])
-
+    
     # print("Number of False values:", false_count,'vs. the number of entries being', len(sortcat['EXPOSURE']))
     # Mask the catalog from the entries that are actually not feaseable from exposure value
     if False in sortcat['EXPOSURE']:

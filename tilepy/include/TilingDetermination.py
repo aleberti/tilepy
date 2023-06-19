@@ -901,7 +901,7 @@ def PGWonFoV_WindowsfromIRFs(filename, InputChar, TC, parameters, dirName):
     return (SuggestedPointings, ObservationTime0, obspar.FOV, nside, len(tobs))
 
 
-def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, datasetDir, outDir):
+def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, conf, datasetDir, outDir):
 
     # UseObs = InputChar['Observatory']
     UseObs = SelectObservatory_fromHotspot(filename)
@@ -1105,7 +1105,7 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, datasetDir, o
                     print("DelayObs", DelayObs)
                     print("----------------------------")
                     P_GW, TC, ObsExp, ZenIni, ZenEnd, ObsCase, pixlist, ipixlistHR = ComputeProbability2D_SelectClusters(
-                        prob, highres, radecs,  TotalExposure, StartObsTime, DelayObs, interObsSlew, obspar, ID, pixlist, ipixlistHR, counter, datasetDir, outDir, False, False)
+                        prob, highres, radecs,  conf, StartObsTime, DelayObs, interObsSlew, obspar, ID, pixlist, ipixlistHR, counter, datasetDir, outDir, False, False)
                     print("=============")
                     print("P_GW, ObsExp, ZenIni, ZenEnd, ObsCase")
                     print(P_GW, ObsExp, ZenIni, ZenEnd, ObsCase)
