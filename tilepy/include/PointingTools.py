@@ -2603,7 +2603,7 @@ def IsSourceInside(Pointings, Sources, FOV, nside):
     tt = 0.5 * np.pi - Sources.dec.rad
     tp = Sources.ra.rad
     txyz = hp.ang2pix(nside, tt, tp)
-    Npoiting = []
+    Npoiting = ''
     Found = False
     try:
         for i in range(0, len(Pointings)):
@@ -2624,7 +2624,8 @@ def IsSourceInside(Pointings, Sources, FOV, nside):
             # print(txyz in ipix_disc)
             if (txyz in ipix_disc):
                 print('Found in pointing number', i)
-                Npoiting.append(i)
+                #Npoiting.append(i)
+                Npoiting = Npoiting+str(i)+','
                 Found = True
         if Found == False:
             print('Source not covered!')
@@ -2638,7 +2639,7 @@ def IsSourceInside(Pointings, Sources, FOV, nside):
         # print(ipix_disc)
         # print(txyz in ipix_disc)
         if (txyz in ipix_disc):
-            Npoiting = 0
+            Npoiting = '0'
             Found = True
             print('Found in pointing number 0')
         else:
@@ -2683,7 +2684,7 @@ def ProduceSummaryFileOld(Found, InputList, InputObservationList, allPossiblePoi
         f = open(outfilename, 'w')
         f.write(
             'ID' + ' ' + 'Distance' + ' ' + 'Theta' + ' ' + 'A90' + ' ' + 'Luminosity' + ' ' + 'TotalObservations' + ' ' + 'TotalPossible' + ' ' + 'FirstCovered' + ' ' + 'TimesFound' + ' ' + 'TotalProb' + ' ' + 'ObsInfo' + '\n')
-        f.write(str(InputList['ID'][j]) + + ' ' + str(
+        f.write(str(InputList['ID'][j]) + ' ' + str(
             InputList['Distance'][j]) + ' ' + str(InputList['theta'][j]) + ' ' + str(InputList['A90'][j]) + ' ' + str(
             luminosity) + ' ' + str(len(InputObservationList)) + ' ' + str(allPossiblePoint) + ' ' + str(
             foundFirst) + ' ' + str(foundTimes) + ' ' + str(totalProb) + ' ' + 'True' + '\n')
@@ -2736,18 +2737,11 @@ def ProduceSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, t
     Found, nP = IsSourceInside(
         Pointings, Source, obspar.FOV, obspar.reducedNside)
     foundFirst = -1
-    if len(nP) == 0:
-        nP = 0
+    #if len(nP) == 0:
+    #    nP = 0
     if 'True' in SuggestedPointings['ObsInfo'] and Found == True:
         print('Found in scheduled observation:', nP)
-
-        if type(nP) != int:
-            FoundFirst = nP[0]
-            # nP = len(nP)
-        print(SuggestedPointingsC[nP])
-        print()
-
-        # print('Plotting the observations')
+        FoundFirst = nP[0]
 
         # --- Writting down the results ---
         pointingsFileC = '%s/%s_cov.txt' % (dirNameSch, ID)
@@ -2787,6 +2781,74 @@ def ProduceSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, t
         FillSummary(outfilename, ID, 0, totalPoswindow,
                     foundFirst, nP, totalPGW, str(0))
 
+def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, 'GW', datasetDir, outDir):
+
+    # Where to save results
+    dirNameFile = outDir + '/PandasSummaryFile/'
+    print(dirNameFile)
+    if not os.path.exists(dirNameFile):
+        os.makedirs(dirNameFile)
+    # What should be in the pandas file is the following: 
+    # 
+    # Is the source inside?
+    maskClean = (SuggestedPointings['ObsInfo'] == 'True')
+    SuggestedPointingsC = SuggestedPointings[maskClean]
+    SuggestedPointingsC.remove_column('ObsInfo')
+
+    print('Source coordinates', Source)
+    print(SuggestedPointingsC)
+
+    Pointings = SkyCoord(SuggestedPointingsC['RA[deg]'], SuggestedPointingsC['DEC[deg]'], frame='fk5',
+                         unit=(u.deg, u.deg))
+
+    totalPGW = float('{:1.4f}'.format(float(sum(SuggestedPointingsC['PGW']))))
+
+    # Check if the source is covered by the scheduled pointings
+    Found, nP = IsSourceInside(Pointings, Source, obspar.FOV, obspar.reducedNside)
+    foundFirst = -1
+    #if len(nP) == 0:
+    #    nP = 0
+    if 'True' in SuggestedPointings['ObsInfo'] and Found == True:
+        print('Found in scheduled observation:', nP)
+        FoundFirst = nP[0]
+
+        # --- Writting down the results ---
+        pointingsFileC = '%s/%s_cov.txt' % (dirNameSch, ID)
+        ascii.write(SuggestedPointingsC, pointingsFileC,
+                    overwrite=True, fast_writer=False)
+
+        pointingsFileCommas = '%s/%s_cov.txt' % (dirNameSchCommas, ID)
+        ascii.write(SuggestedPointingsC, pointingsFileCommas,
+                    format='csv', overwrite=True, fast_writer=False)
+
+        outfilename = dirNameFile + str(ID) + '_SimuSF_' + typeSimu + '.txt'
+        FillSummary(outfilename, ID, len(SuggestedPointingsC), totalPoswindow,
+                    FoundFirst, nP, np.sum(SuggestedPointings['PGW']), str(2))
+
+    if 'True' in SuggestedPointings['ObsInfo'] and Found == False:
+        print('Source not covered')
+
+        # print('Plotting the observations')
+        # --- Writting down the results ---
+        pointingsFileC = '%s/%s_NOTcov.txt' % (dirNameSch, ID)
+        ascii.write(SuggestedPointingsC, pointingsFileC,
+                    overwrite=True, fast_writer=False)
+
+        pointingsFileCommas = '%s/%s_NOTcov.txt' % (dirNameSchCommas, ID)
+        ascii.write(SuggestedPointingsC, pointingsFileCommas,
+                    format='csv', overwrite=True, fast_writer=False)
+
+        outfilename = dirNameFile + str(ID) + '_SimuS_' + typeSimu + '.txt'
+        FillSummary(outfilename, ID, len(SuggestedPointingsC), totalPoswindow,
+                    foundFirst, nP, np.sum(SuggestedPointings['PGW']), str(1))
+
+    if 'True' not in SuggestedPointings['ObsInfo']:
+        print('No observations are scheduled, lets write it down')
+        # --- Writting down the results ---
+        totalPGW = 0
+        outfilename = dirNameFile + str(ID) + '_Simu_' + typeSimu + '.txt'
+        FillSummary(outfilename, ID, 0, totalPoswindow,
+                    foundFirst, nP, totalPGW, str(0))
 
 def ReadSummaryFile(summaryFile):
     print('Note that this function needs to be adapted to the output')
@@ -2987,7 +3049,7 @@ def ComputeProbability2D_SelectClusters(prob, highres, radecs, conf, time, Delay
 
     # Fill a the column EXPOSURE column. Corresponds to the time that one needs to observe to get 5sigma for the highest of the list
     # Three cases depending on the IRFs that should be used (60,40,20)
-    grbSensPath = '/grbsens_output_v3_Sep_2022/'+ conf +'_configuration/grbsens-5.0sigma_t1s-t16384s_irf-'
+    grbSensPath = '/grbsens_output_v3_Sep_2022/'+ conf +'_configuration_EBL/grbsens-5.0sigma_t1s-t16384s_irf-'
     print(datasetDir + grbSensPath +obspar.name+ "_z60_0.5h.txt")
     if (np.any(sortcat['ZENITH_INI'] > 55)):
         # ObsCase, texp60 = ObtainSingleObservingTimes(TotalExposure, DelayObs, interObsSlew, ID, obspar,datasetDir, zenith=60)

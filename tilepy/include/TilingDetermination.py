@@ -1033,8 +1033,6 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, conf, dataset
     for nights in range(0, TotalNights):
         TstartNight = NextWindowTools.NextObservationWindow(
             ObservationTime, obspar)
-        print(ObservationTime.tzinfo)
-        print(ObservationTime0.tzinfo.utcoffset)
         print("TstartNight", TstartNight)
         if (TstartNight == False):
             TendNight = False
@@ -1043,7 +1041,6 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, conf, dataset
             ObsCase = 'NoDarknessFound'
             # print("===== RESULTS ========")
             print('++++ No Darkness Time Found +++++')
-            ObservationTimearray.append(ObservationTime)
             P_GWarray.append(0)
             RAarray.append(0)
             DECarray.append(0)
@@ -1114,8 +1111,7 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, conf, dataset
                     # print("PGW", P_GW,'COORDINATES:', TC,'ZENITH CHANGE', ZenIni,'->', ZenEnd)
                     # print("TotalExposure: ",TotalExposure,"DelayObs:",DelayObs, "Observation Number:",counter, "Exposure:", ObsExp)
 
-                    ObservationTimearray.append(
-                        str(StartObsTime).split('.')[0])
+                    ObservationTimearray.append(str(StartObsTime).split('.')[0].split('+')[0])
 
                     if (ObsCase == 'TimeNotEnoughIte' or ObsCase == 'TimeNotEnough'):
                         StartObsTime = StartObsTime + \
@@ -1174,7 +1170,7 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, conf, dataset
                 # The event hasnt been found to be on the temporal FoV of the instrument
                 # print("===== RESULTS ========")
                 print('++++ The event is not in temporal FoV of the instrument +++++')
-                ObservationTimearray.append(ObservationTime)
+                ObservationTimearray.append(str(ObservationTime).split('.')[0].split('+')[0])
                 P_GWarray.append(0)
                 RAarray.append(0)
                 DECarray.append(0)

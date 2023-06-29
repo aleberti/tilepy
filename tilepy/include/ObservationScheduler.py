@@ -108,7 +108,6 @@ def GetSchedule_ConfigFile(obspar):
         print("Filename: ", name)
         print("Date: ", obspar.obsTime)
         print("Previous pointings: ", obspar.pointingsFile)
-        print("Parameters: ", obspar.cfgFile)
         print("Dataset: ", obspar.datasetDir)
         print("Output: ", obspar.outputDir)
 
@@ -134,9 +133,8 @@ def GetSchedule_ConfigFile(obspar):
             print('No observations are scheduled')
 
 
-def GetSchedule_funcarg(URL, date, datasetDir, galcatname, outDir, targetType, name, lat, lon, height,
-                        sunDown, moonDown,
-                        moonGrey, moonPhase, minMoonSourceSeparation,
+def GetSchedule_funcarg(URL, date, datasetDir, galcatname, outDir, targetType, name, lat, lon, height, sunDown, horizonSun, moonDown,
+                        horizonMoon, moonGrey, moonPhase, minMoonSourceSeparation,
                         maxMoonSourceSeparation, maxZenith, FOV, maxRuns, maxNights,
                         duration, minDuration, useGreytime, minSlewing, online,
                         minimumProbCutForCatalogue, minProbcut, distCut, doPlot, secondRound,
@@ -183,11 +181,11 @@ def GetSchedule_funcarg(URL, date, datasetDir, galcatname, outDir, targetType, n
     # cfgFile = "./configs/FollowupParameters.ini"
 
     obspar = ObservationParameters()
-    obspar.from_args(name, lat, lon, height, sunDown, moonDown,
-                     moonGrey, moonPhase, minMoonSourceSeparation,
+    obspar.from_args(name, lat, lon, height, sunDown, horizonSun, moonDown,
+                     horizonMoon, moonGrey, moonPhase, minMoonSourceSeparation,
                      maxMoonSourceSeparation, maxZenith, FOV, maxRuns, maxNights,
                      duration, minDuration, useGreytime, minSlewing, online,
-                     minimumProbCutForCatalogue, minProbcut,distCut, doPlot, secondRound,
+                     minimumProbCutForCatalogue, minProbcut, distCut, doPlot, secondRound,
                      zenithWeighting, percentageMOC, reducedNside, HRnside,
                      mangrove)
 
