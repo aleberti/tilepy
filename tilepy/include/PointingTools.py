@@ -31,7 +31,7 @@ from gdpyc import DustMap
 from mocpy import MOC
 from scipy.stats import norm
 from six.moves import configparser
-
+import ligo.skymap.io.fits as lf
 from .gwobserve import Sensitivity, GRB
 from .observatory import Observatory
 
@@ -488,7 +488,7 @@ class ObservationParameters(object):
 
 ######################################################
 
-# Functions from BestCandidateon PGW ==> 2D
+# Functions related to the Skymap handling 
 
 ######################################################
 
@@ -573,7 +573,7 @@ def GetGBMMap(URL):
     return fitsfile, filename
 
 
-def GetGWMap(URL):
+def GetGWMap_Flat(URL):
     """
     Bottom-level function that takes a url searches for the localisatios maps from the GW database, or waits until it is uplaoded. 
     
@@ -610,6 +610,34 @@ def GetGWMap(URL):
 
     return fitsfile, filename
 
+
+def GetGWMap(URL):
+    """
+    Bottom-level function that takes a url searches for the localisation maps in multi-order format from the GW database, or waits until it is uplaoded. 
+    
+    :param URL: the URL of the map
+    :type URL: str
+
+    :return: fitsfile, filename
+    rtype: fits, str
+    """
+    filename = URL.split("/")[-1]
+    print("The filename is ", filename)
+    fits_map_url = URL
+    try:
+        command = 'curl %s -o %s' % (fits_map_url, filename)
+        print(command)
+        os.system(command)
+
+    except x:
+        print('Problem with downloading map from url, it was not multiorder or fits.gz')
+        warn = "Caught exception: %s" % x
+        print(warn)
+        pass
+
+    fitsfile = fits.open(filename)
+    
+    return fitsfile, filename
 
 def UNIQSkymap_toNested(skymap_fname):
     """
@@ -694,7 +722,7 @@ def order_inds2uniq(order, inds):
     return uniq
 
 
-def Check2Dor3D(fitsfile, filename, distCut):
+def Check2Dor3D_Flat(fitsfile, filename, distCut):
 
     distnorm = []
     tdistmean = 0
@@ -729,7 +757,7 @@ def Check2Dor3D(fitsfile, filename, distCut):
     return prob, has3D
 
 
-def LoadHealpixMap(thisfilename):
+def LoadHealpixMap_Flat(thisfilename):
     """
     Bottom-level function that downloads aLIGO HEALpix map and keep in cache. 
 
@@ -818,6 +846,222 @@ def LoadHealpixUNIQMap(thisfilename):
 
     return tprob, tdistmu, tdistsigma, tdistnorm
 
+
+def MOC_confidence_region_Flat(infile, percentage, short_name=' ', save2File=False):
+
+    # reading skymap
+    hpx = hp.read_map(infile, verbose=False)
+    npix = len(hpx)
+    nside = hp.npix2nside(npix)
+
+    sort = sorted(hpx, reverse=True)
+    cumsum = np.cumsum(sort)
+    index, value = min(enumerate(cumsum), key=lambda x: abs(x[1] - percentage))
+
+    # finding ipix indices confined in a given percentage
+    index_hpx = range(0, len(hpx))
+    hpx_index = np.c_[hpx, index_hpx]
+
+    sort_2array = sorted(hpx_index, key=lambda x: x[0], reverse=True)
+    value_contour = sort_2array[0:index]
+
+    j = 1
+    table_ipix_contour = []
+
+    for i in range(0, len(value_contour)):
+        ipix_contour = int(value_contour[i][j])
+        table_ipix_contour.append(ipix_contour)
+
+    # from index to polar coordinates
+    theta, phi = hp.pix2ang(nside, table_ipix_contour)
+    # converting these to right ascension and declination in degrees
+    ra = np.rad2deg(phi)
+    dec = np.rad2deg(0.5 * np.pi - theta)
+
+    # creating an astropy.table with RA[deg] and DEC[deg] ipix positions
+    from astropy.table import Table
+    contour_ipix = Table([ra, dec], names=(
+        'RA[deg]', 'DEC[deg]'), meta={'ipix': 'ipix table'})
+
+    # setting MOC order
+    from math import log
+    moc_order = int(log(nside, 2))
+
+    # creating a MOC map from the contour_ipix table
+    moc = MOC.from_table(contour_ipix, 'RA[deg]', 'DEC[deg]', moc_order)
+
+    # writing MOC file in fits
+    if (save2File):
+        moc.write(short_name + '_MOC_' + str(percentage), format='fits')
+    return moc
+
+
+def MOC_confidence_region2D_Flat(hpx, percentage, short_name=' ', save2File=False):
+    """
+        Multi-Order coverage map (MOC) of sky area enclosed within a contour plot
+        at a given confidence level.
+
+        Input:
+        infile: healpix format
+        LVC probability sky map
+        percentage: float
+        probability percentage of the enclosed area
+        short_name: str
+        output file name
+
+        Output: fits format
+        MOC map named "short_name"_"percentage"
+
+        Remark: for json format change the statement
+        "moc.write(short_name+'_MOC_'+str(percentage), format='fits' )" -->
+        "moc.write(short_name+'_MOC_'+str(percentage), format='json' )"
+        """
+
+    # reading skymap
+    npix = len(hpx)
+    nside = hp.npix2nside(npix)
+
+    sort = sorted(hpx, reverse=True)
+    cumsum = np.cumsum(sort)
+    index, value = min(enumerate(cumsum), key=lambda x: abs(x[1] - percentage))
+
+    # finding ipix indices confined in a given percentage
+    index_hpx = range(0, len(hpx))
+    hpx_index = np.c_[hpx, index_hpx]
+
+    sort_2array = sorted(hpx_index, key=lambda x: x[0], reverse=True)
+    value_contour = sort_2array[0:index]
+
+    j = 1
+    table_ipix_contour = []
+
+    for i in range(0, len(value_contour)):
+        ipix_contour = int(value_contour[i][j])
+        table_ipix_contour.append(ipix_contour)
+
+    # from index to polar coordinates
+    theta, phi = hp.pix2ang(nside, table_ipix_contour)
+    # converting these to right ascension and declination in degrees
+    ra = np.rad2deg(phi)
+    dec = np.rad2deg(0.5 * np.pi - theta)
+
+    # creating an astropy.table with RA[deg] and DEC[deg] ipix positions
+    from astropy.table import Table
+    contour_ipix = Table([ra, dec], names=(
+        'RA[deg]', 'DEC[deg]'), meta={'ipix': 'ipix table'})
+
+    # setting MOC order
+    from math import log
+    moc_order = int(log(nside, 2))
+
+    # creating a MOC map from the contour_ipix table
+    moc = MOC.from_table(contour_ipix, 'RA[deg]', 'DEC[deg]', moc_order)
+
+    # writing MOC file in fits
+    if (save2File):
+        moc.write(short_name + '_MOC_' + str(percentage), format='fits')
+    return moc
+
+def LoadHealpixMap(thisfilename):
+    """
+    Bottom-level function that downloads aLIGO HEALpix map and keep in cache. 
+
+    :param thisfilename: name of the fits file containing the localisation map
+    :type thisfilename: str
+
+    :return tprob, tdistmu, tdistsigma, distnorm, detectors, event_id, distmean, disterr
+    :rtype: array, array, array, array, array, str, float, foat, float, 
+    """
+    '''
+   :return tprob : array of p-values as a function of sky position
+    :return tdistmu : array of distance estimate
+    :return tdistsigma : array of error on distance estimates
+    :return distnorm : array of distance normalisations
+    :return detectors: which interferometers triggered
+    :return event_id: ID of the event
+    :return distmean: mean distance from the header
+    :return disterr: error on distance from the header
+    :rtype: array
+    '''
+    PrintFileName = "Loading LVC HEALPix map from file: " + thisfilename
+    print(PrintFileName)
+    fitsfile = fits.open(thisfilename)
+
+    tevent_id = "Non specified"
+    tdetectors = ""
+    tdistmean = 0
+    tdisterr = 0
+    tdistmu = []
+    tdistsigma = []
+    tdistnorm = []
+
+    if 'OBJECT' in fitsfile[1].header:
+        tevent_id = fitsfile[1].header['OBJECT']
+    else:
+        tevent_id = "Non specified"
+
+    if 'INSTRUME' in fitsfile[1].header:
+        tdetectors = fitsfile[1].header['INSTRUME']
+    else:
+        tdetectors = "Non specified"
+
+    if (fitsfile[1].header['TFIELDS'] == 1):
+        skymap = lf.read_sky_map(filename)  
+        tprob = skymap[0]
+    else:
+        skymap = lf.read_sky_map(filename, distances = True) 
+        tprob = skymap[0][0]
+        tdistmu = skymap[0][1]
+        tdistsigma = skymap[0][2]
+        tdistnorm  = skymap[0][3]
+        tdistmean = fitsfile[1].header['DISTMEAN']
+        tdisterr = fitsfile[1].header['DISTSTD']
+        print('Event has triggered ', tdetectors, ' => distance = {0:.2f}'.format(
+            tdistmean), ' +- {0:.2f}'.format(tdisterr), ' Mpc') 
+
+    fitsfile.close()
+
+    return tprob, tdistmu, tdistsigma, tdistnorm, tdetectors, tevent_id, tdistmean, tdisterr
+
+
+def Check2Dor3D(fitsfile, filename, distCut):
+    
+    distnorm = []
+    tdistmean = 0
+    tdiststd = 0
+    fitsfile = fits.open(filename)
+    has3D = True
+    skymap = lf.read_sky_map(filename)  
+    prob = skymap[0]
+
+    #Check if the skymap has 3D information
+    if (fitsfile[1].header['TFIELDS'] == 1):
+        has3D = False
+    else:
+        tdistmean = fitsfile[1].header['DISTMEAN']
+        tdiststd= fitsfile[1].header['DISTSTD']
+        # Check if the object is too far away to use a catalog
+        if tdistmean+2*tdiststd > distCut:
+            has3D = False
+
+    # Check if the hotspot is in the galactic plane
+    npix = len(prob)
+    NSide = hp.npix2nside(npix)
+    MaxPix = np.argmax(prob)
+    MaxTheta, MaxPhi = hp.pix2ang(NSide, MaxPix)
+    raMax = np.rad2deg(MaxPhi)
+    decMax = np.rad2deg(0.5 * np.pi - MaxTheta)
+    c_icrs = SkyCoord(raMax, decMax, frame='fk5', unit=(u.deg, u.deg))
+
+    InsidePlane = Tools.GalacticPlaneBorder(c_icrs)
+    if InsidePlane:
+        has3D = False
+    
+    fitsfile.close()
+
+    return prob, has3D
+
+######################################################
 
 def NightDarkObservation(time, obspar):
     '''
@@ -2104,122 +2348,6 @@ def ComputeProbPGALIntegrateFoV(prob, time, observatory, centerPoint, UsePix, vi
         plt.savefig("%s/Zoom_Pointing_%g.png" % (path, counter))
 
     return P_Gal, P_GW, noncircleGal, talreadysumipixarray
-
-
-def MOC_confidence_region(infile, percentage, short_name=' ', save2File=False):
-
-    # reading skymap
-    hpx = hp.read_map(infile, verbose=False)
-    npix = len(hpx)
-    nside = hp.npix2nside(npix)
-
-    sort = sorted(hpx, reverse=True)
-    cumsum = np.cumsum(sort)
-    index, value = min(enumerate(cumsum), key=lambda x: abs(x[1] - percentage))
-
-    # finding ipix indices confined in a given percentage
-    index_hpx = range(0, len(hpx))
-    hpx_index = np.c_[hpx, index_hpx]
-
-    sort_2array = sorted(hpx_index, key=lambda x: x[0], reverse=True)
-    value_contour = sort_2array[0:index]
-
-    j = 1
-    table_ipix_contour = []
-
-    for i in range(0, len(value_contour)):
-        ipix_contour = int(value_contour[i][j])
-        table_ipix_contour.append(ipix_contour)
-
-    # from index to polar coordinates
-    theta, phi = hp.pix2ang(nside, table_ipix_contour)
-    # converting these to right ascension and declination in degrees
-    ra = np.rad2deg(phi)
-    dec = np.rad2deg(0.5 * np.pi - theta)
-
-    # creating an astropy.table with RA[deg] and DEC[deg] ipix positions
-    from astropy.table import Table
-    contour_ipix = Table([ra, dec], names=(
-        'RA[deg]', 'DEC[deg]'), meta={'ipix': 'ipix table'})
-
-    # setting MOC order
-    from math import log
-    moc_order = int(log(nside, 2))
-
-    # creating a MOC map from the contour_ipix table
-    moc = MOC.from_table(contour_ipix, 'RA[deg]', 'DEC[deg]', moc_order)
-
-    # writing MOC file in fits
-    if (save2File):
-        moc.write(short_name + '_MOC_' + str(percentage), format='fits')
-    return moc
-
-
-def MOC_confidence_region2D(hpx, percentage, short_name=' ', save2File=False):
-    """
-        Multi-Order coverage map (MOC) of sky area enclosed within a contour plot
-        at a given confidence level.
-
-        Input:
-        infile: healpix format
-        LVC probability sky map
-        percentage: float
-        probability percentage of the enclosed area
-        short_name: str
-        output file name
-
-        Output: fits format
-        MOC map named "short_name"_"percentage"
-
-        Remark: for json format change the statement
-        "moc.write(short_name+'_MOC_'+str(percentage), format='fits' )" -->
-        "moc.write(short_name+'_MOC_'+str(percentage), format='json' )"
-        """
-
-    # reading skymap
-    npix = len(hpx)
-    nside = hp.npix2nside(npix)
-
-    sort = sorted(hpx, reverse=True)
-    cumsum = np.cumsum(sort)
-    index, value = min(enumerate(cumsum), key=lambda x: abs(x[1] - percentage))
-
-    # finding ipix indices confined in a given percentage
-    index_hpx = range(0, len(hpx))
-    hpx_index = np.c_[hpx, index_hpx]
-
-    sort_2array = sorted(hpx_index, key=lambda x: x[0], reverse=True)
-    value_contour = sort_2array[0:index]
-
-    j = 1
-    table_ipix_contour = []
-
-    for i in range(0, len(value_contour)):
-        ipix_contour = int(value_contour[i][j])
-        table_ipix_contour.append(ipix_contour)
-
-    # from index to polar coordinates
-    theta, phi = hp.pix2ang(nside, table_ipix_contour)
-    # converting these to right ascension and declination in degrees
-    ra = np.rad2deg(phi)
-    dec = np.rad2deg(0.5 * np.pi - theta)
-
-    # creating an astropy.table with RA[deg] and DEC[deg] ipix positions
-    from astropy.table import Table
-    contour_ipix = Table([ra, dec], names=(
-        'RA[deg]', 'DEC[deg]'), meta={'ipix': 'ipix table'})
-
-    # setting MOC order
-    from math import log
-    moc_order = int(log(nside, 2))
-
-    # creating a MOC map from the contour_ipix table
-    moc = MOC.from_table(contour_ipix, 'RA[deg]', 'DEC[deg]', moc_order)
-
-    # writing MOC file in fits
-    if (save2File):
-        moc.write(short_name + '_MOC_' + str(percentage), format='fits')
-    return moc
 
 
 def randomDate(start, end, prop):
