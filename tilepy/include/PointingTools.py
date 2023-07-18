@@ -1021,8 +1021,7 @@ def Check2Dor3D(fitsfile, filename, distCut):
 
     InsidePlane = Tools.GalacticPlaneBorder(c_icrs)
     if InsidePlane:
-        has3D = False
-    
+        has3D = False 
     fitsfile.close()
 
     return prob, has3D
@@ -2910,12 +2909,13 @@ def ProduceSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, t
         FillSummary(outfilename, ID, 0, totalPoswindow,
                     foundFirst, nP, totalPGW, str(0))
 
-'''
-def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, 'GW', datasetDir, outDir):
+
+def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, type, datasetDir, outDir):
 
     # Where to save results
     dirNameFile = outDir + '/PandasSummaryFile/'
     print(dirNameFile)
+    '''
     if not os.path.exists(dirNameFile):
         os.makedirs(dirNameFile)
     # What should be in the pandas file is the following: 
@@ -2977,10 +2977,10 @@ def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obs
         # --- Writting down the results ---
         totalPGW = 0
         outfilename = dirNameFile + str(ID) + '_Simu_' + typeSimu + '.txt'
-        FillSummary(outfilename, ID, 0, totalPoswindow,
-                    foundFirst, nP, totalPGW, str(0))
+        FillSummary(outfilename, ID, 0, totalPoswindow,foundFirst, nP, totalPGW, str(0))
+    '''
 
-'''
+
 def ReadSummaryFile(summaryFile):
     print('Note that this function needs to be adapted to the output')
     nP, Found = np.genfromtxt(summaryFile, usecols=(
