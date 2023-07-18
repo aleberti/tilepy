@@ -722,39 +722,66 @@ def order_inds2uniq(order, inds):
     return uniq
 
 
-def Check2Dor3D_Flat(fitsfile, filename, distCut):
+def LoadHealpixMap(thisfilename):
+    """
+    Bottom-level function that downloads aLIGO HEALpix map and keep in cache. 
 
-    distnorm = []
+    :param thisfilename: name of the fits file containing the localisation map
+    :type thisfilename: str
+
+    :return tprob, tdistmu, tdistsigma, distnorm, detectors, event_id, distmean, disterr
+    :rtype: array, array, array, array, array, str, float, foat, float, 
+    """
+    '''
+   :return tprob : array of p-values as a function of sky position
+    :return tdistmu : array of distance estimate
+    :return tdistsigma : array of error on distance estimates
+    :return distnorm : array of distance normalisations
+    :return detectors: which interferometers triggered
+    :return event_id: ID of the event
+    :return distmean: mean distance from the header
+    :return disterr: error on distance from the header
+    :rtype: array
+    '''
+    PrintFileName = "Loading LVC HEALPix map from file: " + thisfilename
+    print(PrintFileName)
+    fitsfile = fits.open(thisfilename)
+
+    tevent_id = "Non specified"
+    tdetectors = ""
     tdistmean = 0
-    tdiststd = 0
-    fitsfile = fits.open(filename)
-    if (fitsfile[1].header['TFIELDS'] == 4):
-        prob, distmu, distsigma, distnorm = hp.read_map(filename,
-                                                        field=range(4))
-        tdistmean = fitsfile[1].header['DISTMEAN']
-        tdiststd= fitsfile[1].header['DISTSTD']
+    tdisterr = 0
+    tdistmu = []
+    tdistsigma = []
+    tdistnorm = []
+
+    if 'OBJECT' in fitsfile[1].header:
+        tevent_id = fitsfile[1].header['OBJECT']
     else:
-        prob = hp.read_map(fitsfile, field=range(1))
+        tevent_id = "Non specified"
 
-    has3D = True
-    if len(distnorm) == 0:
-        has3D = False
+    if 'INSTRUME' in fitsfile[1].header:
+        tdetectors = fitsfile[1].header['INSTRUME']
+    else:
+        tdetectors = "Non specified"
 
-    npix = len(prob)
-    NSide = hp.npix2nside(npix)
-    MaxPix = np.argmax(prob)
-    MaxTheta, MaxPhi = hp.pix2ang(NSide, MaxPix)
-    raMax = np.rad2deg(MaxPhi)
-    decMax = np.rad2deg(0.5 * np.pi - MaxTheta)
-    c_icrs = SkyCoord(raMax, decMax, frame='fk5', unit=(u.deg, u.deg))
+    if (fitsfile[1].header['TFIELDS'] == 1):
+        skymap = lf.read_sky_map(thisfilename)  
+        tprob = skymap[0]
+    else:
+        skymap = lf.read_sky_map(thisfilename, distances = True) 
+        tprob = skymap[0][0]
+        tdistmu = skymap[0][1]
+        tdistsigma = skymap[0][2]
+        tdistnorm  = skymap[0][3]
+        tdistmean = fitsfile[1].header['DISTMEAN']
+        tdisterr = fitsfile[1].header['DISTSTD']
+        print('Event has triggered ', tdetectors, ' => distance = {0:.2f}'.format(
+            tdistmean), ' +- {0:.2f}'.format(tdisterr), ' Mpc') 
 
-    InsidePlane = Tools.GalacticPlaneBorder(c_icrs)
-    if InsidePlane:
-        has3D = False
+    fitsfile.close()
 
-    if tdistmean+2*tdiststd > distCut:
-        has3D = False
-    return prob, has3D
+    return tprob, tdistmu, tdistsigma, tdistnorm, tdetectors, tevent_id, tdistmean, tdisterr
 
 
 def LoadHealpixMap_Flat(thisfilename):
@@ -962,67 +989,6 @@ def MOC_confidence_region2D_Flat(hpx, percentage, short_name=' ', save2File=Fals
         moc.write(short_name + '_MOC_' + str(percentage), format='fits')
     return moc
 
-def LoadHealpixMap(thisfilename):
-    """
-    Bottom-level function that downloads aLIGO HEALpix map and keep in cache. 
-
-    :param thisfilename: name of the fits file containing the localisation map
-    :type thisfilename: str
-
-    :return tprob, tdistmu, tdistsigma, distnorm, detectors, event_id, distmean, disterr
-    :rtype: array, array, array, array, array, str, float, foat, float, 
-    """
-    '''
-   :return tprob : array of p-values as a function of sky position
-    :return tdistmu : array of distance estimate
-    :return tdistsigma : array of error on distance estimates
-    :return distnorm : array of distance normalisations
-    :return detectors: which interferometers triggered
-    :return event_id: ID of the event
-    :return distmean: mean distance from the header
-    :return disterr: error on distance from the header
-    :rtype: array
-    '''
-    PrintFileName = "Loading LVC HEALPix map from file: " + thisfilename
-    print(PrintFileName)
-    fitsfile = fits.open(thisfilename)
-
-    tevent_id = "Non specified"
-    tdetectors = ""
-    tdistmean = 0
-    tdisterr = 0
-    tdistmu = []
-    tdistsigma = []
-    tdistnorm = []
-
-    if 'OBJECT' in fitsfile[1].header:
-        tevent_id = fitsfile[1].header['OBJECT']
-    else:
-        tevent_id = "Non specified"
-
-    if 'INSTRUME' in fitsfile[1].header:
-        tdetectors = fitsfile[1].header['INSTRUME']
-    else:
-        tdetectors = "Non specified"
-
-    if (fitsfile[1].header['TFIELDS'] == 1):
-        skymap = lf.read_sky_map(filename)  
-        tprob = skymap[0]
-    else:
-        skymap = lf.read_sky_map(filename, distances = True) 
-        tprob = skymap[0][0]
-        tdistmu = skymap[0][1]
-        tdistsigma = skymap[0][2]
-        tdistnorm  = skymap[0][3]
-        tdistmean = fitsfile[1].header['DISTMEAN']
-        tdisterr = fitsfile[1].header['DISTSTD']
-        print('Event has triggered ', tdetectors, ' => distance = {0:.2f}'.format(
-            tdistmean), ' +- {0:.2f}'.format(tdisterr), ' Mpc') 
-
-    fitsfile.close()
-
-    return tprob, tdistmu, tdistsigma, tdistnorm, tdetectors, tevent_id, tdistmean, tdisterr
-
 
 def Check2Dor3D(fitsfile, filename, distCut):
     
@@ -1059,6 +1025,41 @@ def Check2Dor3D(fitsfile, filename, distCut):
     
     fitsfile.close()
 
+    return prob, has3D
+
+
+def Check2Dor3D_Flat(fitsfile, filename, distCut):
+
+    distnorm = []
+    tdistmean = 0
+    tdiststd = 0
+    fitsfile = fits.open(filename)
+    if (fitsfile[1].header['TFIELDS'] == 4):
+        prob, distmu, distsigma, distnorm = hp.read_map(filename,
+                                                        field=range(4))
+        tdistmean = fitsfile[1].header['DISTMEAN']
+        tdiststd= fitsfile[1].header['DISTSTD']
+    else:
+        prob = hp.read_map(fitsfile, field=range(1))
+
+    has3D = True
+    if len(distnorm) == 0:
+        has3D = False
+
+    npix = len(prob)
+    NSide = hp.npix2nside(npix)
+    MaxPix = np.argmax(prob)
+    MaxTheta, MaxPhi = hp.pix2ang(NSide, MaxPix)
+    raMax = np.rad2deg(MaxPhi)
+    decMax = np.rad2deg(0.5 * np.pi - MaxTheta)
+    c_icrs = SkyCoord(raMax, decMax, frame='fk5', unit=(u.deg, u.deg))
+
+    InsidePlane = Tools.GalacticPlaneBorder(c_icrs)
+    if InsidePlane:
+        has3D = False
+
+    if tdistmean+2*tdiststd > distCut:
+        has3D = False
     return prob, has3D
 
 ######################################################
@@ -2909,6 +2910,7 @@ def ProduceSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, t
         FillSummary(outfilename, ID, 0, totalPoswindow,
                     foundFirst, nP, totalPGW, str(0))
 
+'''
 def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, 'GW', datasetDir, outDir):
 
     # Where to save results
@@ -2978,6 +2980,7 @@ def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obs
         FillSummary(outfilename, ID, 0, totalPoswindow,
                     foundFirst, nP, totalPGW, str(0))
 
+'''
 def ReadSummaryFile(summaryFile):
     print('Note that this function needs to be adapted to the output')
     nP, Found = np.genfromtxt(summaryFile, usecols=(

@@ -984,9 +984,7 @@ def PGWonFoV_WindowOptimisation(filename, timeStr, TC, parameters, conf, dataset
     # distnorm = skymap_OD[1]['diststd']
 
     prob = hp.pixelfunc.ud_grade(tprob, obspar.reducedNside, power=-2)
-
     nside = obspar.reducedNside
-
     highres = hp.pixelfunc.ud_grade(prob, obspar.HRnside, power=-2)
 
     # Create table for 2D probability at 90% containment
