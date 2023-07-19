@@ -573,7 +573,7 @@ def GetGBMMap(URL):
     return fitsfile, filename
 
 
-def GetGWMap_Flat(URL):
+def GetGWMap(URL):
     """
     Bottom-level function that takes a url searches for the localisatios maps from the GW database, or waits until it is uplaoded. 
     
@@ -611,7 +611,7 @@ def GetGWMap_Flat(URL):
     return fitsfile, filename
 
 
-def GetGWMap(URL):
+def GetGWMap_MultiOrder(URL):
     """
     Bottom-level function that takes a url searches for the localisation maps in multi-order format from the GW database, or waits until it is uplaoded. 
     
@@ -722,7 +722,7 @@ def order_inds2uniq(order, inds):
     return uniq
 
 
-def LoadHealpixMap(thisfilename):
+def LoadHealpixMap_MultiOrder(thisfilename):
     """
     Bottom-level function that downloads aLIGO HEALpix map and keep in cache. 
 
@@ -784,7 +784,7 @@ def LoadHealpixMap(thisfilename):
     return tprob, tdistmu, tdistsigma, tdistnorm, tdetectors, tevent_id, tdistmean, tdisterr
 
 
-def LoadHealpixMap_Flat(thisfilename):
+def LoadHealpixMap(thisfilename):
     """
     Bottom-level function that downloads aLIGO HEALpix map and keep in cache. 
 
@@ -990,7 +990,7 @@ def MOC_confidence_region2D_Flat(hpx, percentage, short_name=' ', save2File=Fals
     return moc
 
 
-def Check2Dor3D(fitsfile, filename, distCut):
+def Check2Dor3D_MultiOrder(fitsfile, filename, distCut):
     
     distnorm = []
     tdistmean = 0
@@ -1027,7 +1027,7 @@ def Check2Dor3D(fitsfile, filename, distCut):
     return prob, has3D
 
 
-def Check2Dor3D_Flat(fitsfile, filename, distCut):
+def Check2Dor3D(fitsfile, filename, distCut):
 
     distnorm = []
     tdistmean = 0
