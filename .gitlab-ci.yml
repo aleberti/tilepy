@@ -3,8 +3,10 @@ stages:
 
 install_package:
   stage: install
-  image: python:slim
+  image: python:latest  
   script: 
     - apt-get -y update && apt-get install git -y
     - pip install --upgrade pip 
-    - pip install .
+    - pip install --prefer-binary .
+  tags:
+    - svom-specific
