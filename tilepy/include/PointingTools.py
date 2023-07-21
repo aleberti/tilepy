@@ -262,8 +262,8 @@ class Tools:
     def GalacticPlaneBorder(cls, coords):
         lon = coords.galactic.l.value  # x-coordinate
         lat = coords.galactic.b.value  # y-coordinate
-        print(lon)
-        print(lat)
+        #print(lon)
+        #print(lat)
         YouAreInside = False
         n = 20
         if (lat <= 10 and lat >= 0 and lon <= 130):
@@ -274,11 +274,11 @@ class Tools:
             n = lat + (1.0/13) * lon
         elif (lat >= -10 and lat <= 0 and lon >= 240):
             n = lat + (1.0/12) * lon - 20
-        print(n)
+        #print(n)
         if np.absolute(n) <= 10:
             YouAreInside = True
             # print('You got here')
-        print(YouAreInside)
+        #print(YouAreInside)
         return YouAreInside
 
     @classmethod
@@ -596,20 +596,22 @@ def GetGWMap_Flat(URL):
     else:
         print('The GW map is not in multiorder format, we will try the .fits.gz format, you are welcome')
 
+    newFilename = filename + "_"+str(int(time.time() * 1e6))
+    print("internal filename: ", newFilename)
+
     try:
-        command = 'curl %s -o %s' % (fits_map_url, filename)
+        command = 'curl %s -o %s' % (fits_map_url, newFilename)
         print(command)
         os.system(command)
-
     except x:
         print('Problem with downloading map from url, it was not multiorder or fits.gz')
         warn = "Caught exception: %s" % x
         print(warn)
         pass
 
-    fitsfile = fits.open(filename)
+    fitsfile = fits.open(newFilename)
 
-    return fitsfile, filename
+    return fitsfile, newFilename
 
 
 def GetGWMap(URL):
@@ -2177,7 +2179,7 @@ def ModifyCatalogue(prob, cat, FOV, totaldPdV, nside):
      using that quantity as a criteria
     '''
     # lengthSG=0.02*len(cat)
-    lengthSG = 1000
+    lengthSG = 100
     SelectedGals = cat[:lengthSG]
     dp_dV_FOV = []
     # print('len(cat[RAJ2000])', len(cat['RAJ2000']))

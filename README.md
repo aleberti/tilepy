@@ -2,10 +2,11 @@
 
 ## Installation
 
-We clone the repo, create an environment to work, activate the enviroment and install the package.
+We clone the repo, create an environment to work, activate the environment and install the package.
 
 ```python
 git clone git@github.com:astro-transients/tilepy.git
+cd tilepy
 conda env create -n tilepyenv -f environment.yml
 conda activate tilepyenv
 python -m pip install -e .
@@ -24,6 +25,7 @@ Requirements of the installation:
 - The current version of the package **only** runs with `python>=3.9`. Python 3.9 is recommended. Careful as well with the versions of matplotlib and healpy, they should be the ones explicited in the requirements.yml, otherwise there will be conflicts between them when plotting skymaps.  
 - Note that by creating the env from the environment.yml, the libraries and versions needed will be installed authomatically.
 - Note that everytime we made changes to the package, you should update the installation of the package doing ```pip install .``` in the folder where the setup.py is. The changes will be only applied to the env where you are working. 
+- The package relies on 'curl' to download the localisaton map of the multi-messenger events.
 
 In the case you are working in CC-Lyon, the easiest solution is to do```ccenv conda ``` and then follow the instructions given above. 
 
@@ -48,33 +50,33 @@ Package including functions to perform GW follow-up scheduling and simulations i
           - height: height of the observatory 
 
         - [visibility]
-          - sunDown: altitude coordinate of the Sun in deg to define darkness conditions (for astronomic darkness sunDown= -18)
-          - moonDown: altitude coordinate of the Moon in deg to define darkness conditions (for astronomic darkness moonDown= -0.5)
-          - moonGrey: altitude coordinate of the Moon in deg to define greyness conditions
+          - sunDown: altitude of the Sun in deg to define darkness conditions (for astronomic darkness sunDown= -18)
+          - moonDown: altitude of the Moon in deg to define darkness conditions (for astronomic darkness moonDown= -0.5)
+          - moonGrey: altitude of the Moon in deg to define greyness conditions
           - moonPhase: phase of the Moon to define greyness conditions
           - minMoonSourceSeparation: minimum separation Source-Moon in deg to define greyness conditions
           - maxMoonSourceSeparation: max separation Source-Moon in deg to define greyness conditions
 
         - [operations]
           - maxZenith: max zenith angle which will be considered as accesible sky
-          - FOV: radious of the circular FoV defining the tiles
-          - maxRuns: maximum number of tiles that could be scheduled
+          - FOV: radius of the circular FoV defining the tiles
+          - maxRuns: maximum number of tiles that will be scheduled
           - maxNights: total number of nights considered
-          - duration: standard exposure per tile 
-          - minDuration: minimal duration of tile if standard exposure is not allocable
+          - duration: standard exposure per tile
+          - minDuration: minimal duration of tile if standard exposure is not available (e.g. at the end of the night)
           - useGreytime: flag to schedule greyness observations in addition to darkness
 
         - [tiling]
-          - online: ??
-          - minimumProbCutforCatalogue: minimal 3D(GWxgalaxyCat)probability covered per tile to schedule observation
-          - minProbcut:  minimal 2D probability covered per tile to schedule observation
+          - online: tbd
+          - minimumProbCutforCatalogue: only galaxies that have probabilities higher than 'minimumProbCutforCatalogue x (GW x galaxy)_max' participate in the scheduling calculation
+          - minProbcut:  minimal probability covered per tile to schedule observation
           - distCut: distance cut to define the mandatory use of 2D strategy (coming from galaxy catalogue completeness)
-          - doPlot: produce detailed various plots of the tile
+          - doPlot: produce detailed plots of the scheduling
           - secondRound: consider two maps for scheduling 
-          - zenithWeighting: weight on probability that would be applied to prioritize coordinates that have lower zenith angle values. Step size is 5 deg in zenith (0.75 is a resonable value)
-          - percentageMOC: percentage of the sky localization region that would be considered to compute the MOC
+          - zenithWeighting: weight on probability that would be applied to prioritize coordinates that have lower zenith angle values. Step size is 5 deg in zenith (0.75 is a reasonable value)
+          - percentageMOC: percentage of the sky localization region that will be considered to compute the MOC
           - reducedNside: nside of the low-resolution skymap used as a grid to speed up the computation
-          - HRnside: nside of the high-resolution skymap used to compute the probability covered
+          - HRnside: nside of the high-resolution skymap used to compute the covered probability
           - mangrove: flag to use the mangrove method of weighting by the mass of the host galaxy
 
 ## Creation of the reduced galaxy file
