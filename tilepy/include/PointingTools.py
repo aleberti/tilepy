@@ -3057,6 +3057,10 @@ class NextWindowTools:
             time = Tools.PreviousMoonset(time, obsSite)
         return time
 
+    @classmethod
+    def AddRunDuration_to_StartingTime(cls, obspar):  
+        previousTime = np.genfromtxt(obspar.pointingsFile, usecols=(0),skip_header=1, unpack=True, dtype='str')   
+        obspar.obsTime = datetime.datetime.strptime(str(previousTime), '%Y-%m-%dT%H:%M:%S')+ datetime.timedelta(minutes=np.float64(obspar.duration))
 
 def ZenithAngleCut_TwoTimes(prob, nside, time, time1, minProbcut, maxZenith, observatory):
     '''
