@@ -34,6 +34,7 @@ from six.moves import configparser
 import ligo.skymap.io.fits as lf
 from .gwobserve import Sensitivity, GRB
 from .observatory import Observatory
+import pandas as pd
 
 if six.PY2:
     ConfigParser = configparser.SafeConfigParser
@@ -2767,11 +2768,14 @@ def IsSourceInside(Pointings, Sources, FOV, nside):
         # print(ipix_disc)
         # print(txyz in ipix_disc)
         if (txyz in ipix_disc):
-            Npoiting = '0'
+            Npoiting = '0,'
             Found = True
             print('Found in pointing number 0')
         else:
             print('Source not covered!')
+    #Reformat output
+    if Found == True: 
+        Npoiting = Npoiting[:-1]
     return Found, Npoiting
 
 
@@ -2910,12 +2914,12 @@ def ProduceSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, t
                     foundFirst, nP, totalPGW, str(0))
 
 
-def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, type, datasetDir, outDir):
+def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obspar, typeSimu, datasetDir, outDir, configID):
 
     # Where to save results
     dirNameFile = outDir + '/PandasSummaryFile/'
     print(dirNameFile)
-    '''
+    
     if not os.path.exists(dirNameFile):
         os.makedirs(dirNameFile)
     # What should be in the pandas file is the following: 
@@ -2923,63 +2927,64 @@ def ProducePandasSummaryFile(Source, SuggestedPointings, totalPoswindow, ID, obs
     # Is the source inside?
     maskClean = (SuggestedPointings['ObsInfo'] == 'True')
     SuggestedPointingsC = SuggestedPointings[maskClean]
-    SuggestedPointingsC.remove_column('ObsInfo')
-
-    print('Source coordinates', Source)
-    print(SuggestedPointingsC)
 
     Pointings = SkyCoord(SuggestedPointingsC['RA[deg]'], SuggestedPointingsC['DEC[deg]'], frame='fk5',
                          unit=(u.deg, u.deg))
 
-    totalPGW = float('{:1.4f}'.format(float(sum(SuggestedPointingsC['PGW']))))
-
     # Check if the source is covered by the scheduled pointings
     Found, nP = IsSourceInside(Pointings, Source, obspar.FOV, obspar.reducedNside)
-    foundFirst = -1
-    #if len(nP) == 0:
-    #    nP = 0
-    if 'True' in SuggestedPointings['ObsInfo'] and Found == True:
-        print('Found in scheduled observation:', nP)
-        FoundFirst = nP[0]
 
-        # --- Writting down the results ---
-        pointingsFileC = '%s/%s_cov.txt' % (dirNameSch, ID)
-        ascii.write(SuggestedPointingsC, pointingsFileC,
-                    overwrite=True, fast_writer=False)
+    totalPGW = float('{:1.4f}'.format(float(sum(SuggestedPointingsC['PGW']))))
+    
+    # Rename columns 
+    SuggestedPointingsC.rename_column('Observation Time UTC', 'obs_time_utc')
+    SuggestedPointingsC.rename_column('DEC[deg]', 'dec')
+    SuggestedPointingsC.rename_column('RA[deg]', 'ra')
+    SuggestedPointingsC.rename_column('Observatory', 'observatory')
+    SuggestedPointingsC.rename_column('ZenIni[deg]', 'zenith_init')
+    SuggestedPointingsC.rename_column('ZenEnd[deg]', 'zenith_end')
+    SuggestedPointingsC.rename_column('Duration[s]','duration')
+    SuggestedPointingsC.rename_column('Delay[s]','delay')
 
-        pointingsFileCommas = '%s/%s_cov.txt' % (dirNameSchCommas, ID)
-        ascii.write(SuggestedPointingsC, pointingsFileCommas,
-                    format='csv', overwrite=True, fast_writer=False)
+    SuggestedPointingsC.remove_column('ObsInfo')
+    SuggestedPointingsC.remove_column('PGW')
 
-        outfilename = dirNameFile + str(ID) + '_SimuSF_' + typeSimu + '.txt'
-        FillSummary(outfilename, ID, len(SuggestedPointingsC), totalPoswindow,
-                    FoundFirst, nP, np.sum(SuggestedPointings['PGW']), str(2))
-
-    if 'True' in SuggestedPointings['ObsInfo'] and Found == False:
-        print('Source not covered')
-
-        # print('Plotting the observations')
-        # --- Writting down the results ---
-        pointingsFileC = '%s/%s_NOTcov.txt' % (dirNameSch, ID)
-        ascii.write(SuggestedPointingsC, pointingsFileC,
-                    overwrite=True, fast_writer=False)
-
-        pointingsFileCommas = '%s/%s_NOTcov.txt' % (dirNameSchCommas, ID)
-        ascii.write(SuggestedPointingsC, pointingsFileCommas,
-                    format='csv', overwrite=True, fast_writer=False)
-
-        outfilename = dirNameFile + str(ID) + '_SimuS_' + typeSimu + '.txt'
-        FillSummary(outfilename, ID, len(SuggestedPointingsC), totalPoswindow,
-                    foundFirst, nP, np.sum(SuggestedPointings['PGW']), str(1))
 
     if 'True' not in SuggestedPointings['ObsInfo']:
-        print('No observations are scheduled, lets write it down')
-        # --- Writting down the results ---
+        print('No observations are scheduled')
         totalPGW = 0
-        outfilename = dirNameFile + str(ID) + '_Simu_' + typeSimu + '.txt'
-        FillSummary(outfilename, ID, 0, totalPoswindow,foundFirst, nP, totalPGW, str(0))
-    '''
+        totalObservations = 0
+        pointings = []
+    else: 
+        totalPGW = np.sum(SuggestedPointings['PGW'])
+        totalObservations = len(SuggestedPointingsC['ra'])
+        pointings = SuggestedPointingsC.to_pandas().to_dict(orient='records')
+        # Convert all values to strings in the list of dictionaries
+        # for my_dict in pointings:
+        #    for key in my_dict:
+        #        my_dict[key] = str(my_dict[key])
+        # Convert all values to strings
+        # pointings_as_strings = {key: str(value) for key, value in pointings.items()}
 
+        print(pointings)
+    data = {
+        'obs_run': str(ID),
+        'config_file': str(configID),
+        'total_observations': str(totalObservations),
+        'total_prob': str(totalPGW),
+        'pointings_found': str(nP),
+        'found': str(Found),
+        'n_found': str(len(nP)), 
+        'pointings': [np.array(pointings)], 
+    }
+
+    print(data)
+    # Create the DataFrame
+    df = pd.DataFrame(data)
+
+    # Display the DataFrame
+    print(df)
+    # df.to_parquet(dirNameFile+str(ID)+'_'+configID+'.parquet')
 
 def ReadSummaryFile(summaryFile):
     print('Note that this function needs to be adapted to the output')
