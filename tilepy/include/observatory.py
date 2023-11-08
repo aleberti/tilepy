@@ -131,11 +131,13 @@ class Observatory:
         rise_time, set_time = self.get_risings_and_settings('sun', self.max_sun_altitude, start_time, stop_time)
 
         time_interval_sun = []
-        for i in range(nb_observation_night):
+        for i in range(min(nb_observation_night, len(set_time))):
             if set_time[i] < rise_time[i]:
                 time_interval_sun.append([set_time[i], rise_time[i]])
-            else:
+            elif i < (len(set_time)-1):
                 time_interval_sun.append([set_time[i], rise_time[i + 1]])
+            else:
+                continue
 
         return time_interval_sun
 
@@ -224,8 +226,14 @@ class Observatory:
                                                        self.timescale_converter.from_datetime(stop_time),
                                                        f)
         if len(time) == 0:
-            rise_time = [start_time, ]
-            set_time = [stop_time, ]
+            alt, az, distance = (self.observatory_location + self.eph['earth']).at(
+                self.timescale_converter.from_datetime(start_time)).observe(self.eph[celestial_body]).apparent().altaz()
+            if alt.degrees < horizon:
+                rise_time = [stop_time, ]
+                set_time = [start_time, ]
+            else:
+                rise_time = [start_time, ]
+                set_time = [stop_time, ]
         else:
             rise_time = list(time[rising_indicator == 1].utc_datetime())
             set_time = list(time[rising_indicator == 0].utc_datetime())
