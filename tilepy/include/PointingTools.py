@@ -308,7 +308,7 @@ class ObservationParameters(object):
                  duration=None, minDuration=None, useGreytime=None, minSlewing=None, online=False,
                  minimumProbCutForCatalogue=None, minProbcut=None, distCut=None, doPlot=None, secondRound=None,
                  zenithWeighting=None, percentageMOC=None, reducedNside=None, HRnside=None,
-                 mangrove=None, url=None,obsTime=None,datasetDir=None,galcatName=None,outDir=None,pointingsFile=None,alertType=None, locCut=None, MO=False, algorithm=None):
+                 mangrove=None, url=None,obsTime=None,datasetDir=None,galcatName=None,outDir=None,pointingsFile=None,alertType=None, locCut=None, MO=False, algorithm=None, strategy=None):
 
         self.name = name
         self.lat = lat
@@ -348,6 +348,7 @@ class ObservationParameters(object):
         self.HRnside = HRnside
         self.mangrove = mangrove
         self.algorithm=algorithm
+        self.strategy=strategy
 
         # Parsed args
         self.url = url 
@@ -375,6 +376,7 @@ class ObservationParameters(object):
         txt += 'Duration: {}\n'.format(self.duration)
         txt += 'High Resolution NSIDE: {}\n'.format(self.HRnside)
         txt += 'Low Resolution NSIDE: {}\n'.format(self.reducedNside)
+        txt += 'The strategy is ({algorithm},{strategy}, mangrove={mangrove})\n'.format(algorithm = self.algorithm, strategy = self.strategy,mangrove = self.mangrove)
         # txt += '----------------------------------------------------------------------\n'.format()
         return txt
 
@@ -445,6 +447,7 @@ class ObservationParameters(object):
         self.HRnside = int(parser.get(section, 'hrnside', fallback=0))
         self.mangrove = (parser.getboolean(section, 'mangrove', fallback=None))
         self.algorithm = str(parser.get(section, 'algorithm', fallback=None))
+        self.strategy = str(parser.get(section, 'strategy', fallback=None))
 
     def from_args(self, name, lat, lon, height, sunDown, moonDown,
                   moonGrey, moonPhase, minMoonSourceSeparation,
@@ -1965,8 +1968,8 @@ def ComputeProbBCFOVSimple(prob, time, observatory, visiGals, allGals, tsum_dP_d
     return P_Gal, P_GW, talreadysumipixarray2
 
 
-def ComputeProbBCFOV(prob, time, observatory, finalGals, visiGals, allGals, tsum_dP_dV, talreadysumipixarray, nside, thisminz, maxZenith, FOV, tname,
-                     tsavedcircle, dirName, doPlot):
+def ComputeProbGalTargetted(prob, time, finalGals, visiGals, allGals, tsum_dP_dV, talreadysumipixarray, nside, thisminz,obspar, tname,
+                     tsavedcircle, dirName):
     '''Computes probability Pgal and Pgw in FoV but it takes into account a list of pixels to avoid recounting already observed zones.
     Returns saved circle too (is it really needed? )
     bool doPlot when  = True is used to plot the maps
@@ -1981,6 +1984,10 @@ def ComputeProbBCFOV(prob, time, observatory, finalGals, visiGals, allGals, tsum
 
 
     '''
+    observatory = obspar.Location
+    maxZenith = obspar.maxZenith
+    FOV = obspar.FOV
+    doPlot = obspar.doPlot
 
     targetCoord = co.SkyCoord(
         finalGals['RAJ2000'][:1], finalGals['DEJ2000'][:1], frame='fk5', unit=(u.deg, u.deg))
@@ -1992,27 +1999,17 @@ def ComputeProbBCFOV(prob, time, observatory, finalGals, visiGals, allGals, tsum
         allGals['RAJ2000'], allGals['DEJ2000'], frame='fk5', unit=(u.deg, u.deg))
 
     dp_dVfinal = visiGals['dp_dV']
-    # dp_dV = tGals['dp_dV']
 
     # Array of indices of pixels inside circle of  FoV
 
     radius = FOV
 
     t = 0.5 * np.pi - targetCoord[0].dec.rad
-
     p = targetCoord[0].ra.rad
-
+    xyz = hp.ang2vec(t, p)
     # print('t, p, targetCoord[0].ra.deg, targetCoord[0].dec.deg',t, p, targetCoord[0].ra.deg, targetCoord[0].dec.deg)
 
-    xyz = hp.ang2vec(t, p)
-
-    # print(xyz)
-
-    # translate pixel indices to coordinates
-
     ipix_disc = hp.query_disc(nside, xyz, np.deg2rad(radius))
-
-    # print('ipix_disc',ipix_disc)
 
     effectiveipix_disc = []
 
@@ -2027,13 +2024,6 @@ def ComputeProbBCFOV(prob, time, observatory, finalGals, visiGals, allGals, tsum
 
     P_Gal = dp_dVfinal[targetCoord2.separation(
         targetCoord).deg < radius].sum() / tsum_dP_dV
-
-    # print("Total probability within H.E.S.S. FoV: {0}".format(P_GW))
-
-    # print("Probability of galaxies within H.E.S.S. FoV in the LIGO signal region:{0}".format(P_Gal))
-
-    # all galaxies inside the current observation circle
-
     circleGal = visiGals[targetCoord2.separation(targetCoord).deg < radius]
     # print('Galaxies within the FoV: ', len(circleGal['RAJ2000']))
 
@@ -2145,8 +2135,6 @@ def SimpleGWprob(prob, finalGals, talreadysumipixarray, FOV, nside):
     for j in range(0, len(ipix_disc)):
         if not (ipix_disc[j] in talreadysumipixarray):
             effectiveipix_disc.append(ipix_disc[j])
-
-    # print('talreadysumipixarray', talreadysumipixarray)
 
     probability = prob[effectiveipix_disc].sum()
     return probability
@@ -2295,11 +2283,12 @@ def ModifyCatalogue(prob, cat, FOV, totaldPdV, nside):
 
 
 def ComputeProbPGALIntegrateFoV(prob, time, observatory, centerPoint, UsePix, visiGals, allGalsaftercuts, tsum_dP_dV, talreadysumipixarray, nside,
-                                thisminz, maxZenith, FOV, counter, tname, dirName, doPlot):
+                                thisminz, obspar, counter, tname, dirName, doPlot):
     '''
-        Same as ComputeProbBCFOV but it does not return circle coordinates.
+        Same as ComputeProbGalTargetted but it does not return circle coordinates.
     '''
-
+    maxZenith = obspar.maxZenith 
+    FOV = obspar.FOV
     if UsePix:
         targetCoord = co.SkyCoord(
             centerPoint['PIXRA'][:1], centerPoint['PIXDEC'][:1], frame='fk5', unit=(u.deg, u.deg))
