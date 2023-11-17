@@ -701,14 +701,14 @@ def PlotPointings_Pretty(filename, name, PointingsFile1, dirName, obspar):
 
     for i in range(0, len(ra)):
         COLORS = 'k'
-        fov_plot = 2
+        fov_plot = obspar.FOV
         try:
             if nametel[i] == "HESS":
                 COLORS = 'k'
-                fov_plot = 2
+                fov_plot = obspar.FOV
             if nametel[i] == "LST":
                 COLORS = 'r'
-                fov_plot =  2
+                fov_plot =  obspar.FOV
         except:
             print("Ploting with one telescope")
 
@@ -726,4 +726,4 @@ def PlotPointings_Pretty(filename, name, PointingsFile1, dirName, obspar):
     cbar = fig.colorbar(pos, ax=ax, location="left", fraction=0.046, pad=0.05)
     cbar.set_label("Probability",  color='black', fontsize=7)
     plt.savefig("%s/Plot_PrettyMap_%s.png" % (dirName, name), dpi=300)
-    # plt.show()
+    #plt.show()
