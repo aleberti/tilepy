@@ -170,11 +170,11 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
 
     # Main Parameters
 
-    #print(obspar)
+    print(obspar)
 
     # load galaxy catalog from local file
     # this could be done at the beginning of the night to save time
-    print('hey')
+
     if not obspar.mangrove:
         cat = LoadGalaxies(galFile)
     else:
@@ -254,7 +254,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
         NightDarkRuns = NightDarkObservation(ObservationTime0, obspar)
 
     # print('EffectiveRunsTime',len(NightDarkRuns),'being',NightDarkRuns)
-    print('yo are here')
+    print('yo are here',obspar.strategy,obspar.strategy == 'targetted')
     totalProb = 0.
     counter = 0
     if(obspar.strategy == 'integrated'):
@@ -285,7 +285,6 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                         # final galaxies within the FoV
                         # This notes LIGOVirgo type of signal
                         if ((finalGals['dp_dV_FOV'][:1] < (2 * obspar.minProbcut)) and (sum(P_GWarray) > 0.40) and obspar.secondRound):
-                            print('probability', finalGals['dp_dV_FOV'][:1])
                             visible, altaz, tGals_aux2 = VisibleAtTime(
                                 ObservationTime, tGals_aux2, obspar.maxZenith, obspar.location)
                             if (visible):
@@ -334,7 +333,6 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                             # print("\n=================================")
                             # print("TARGET COORDINATES AND DETAILS...")
                             # print("=================================")
-                            # print(finalGals['RAJ2000', 'DEJ2000', 'Bmag', 'Dist', 'Alt', 'dp_dV','dp_dV_FOV'][:1])
                             p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbPGALIntegrateFoV(
                                 prob, ObservationTime, obspar.location, finalGals, False, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz, obspar, counter, name, dirName, obspar.doPlot)
 
@@ -354,7 +352,6 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
             else:
                 break
     if(obspar.strategy == 'targetted'):
-        print('here you enter in the loop')
         for j, NightDarkRun in enumerate(NightDarkRuns):
             if (len(ObservationTimearray) < obspar.maxRuns):
                 ObservationTime = NightDarkRun
@@ -373,10 +370,9 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                         finalGals = visiGals[mask & maskgrey]
                     if not obspar.useGreytime:
                         finalGals = visiGals[mask]
-                    print('finalGals', finalGals)
-                    if (finalGals['dp_dV'][:1] > obspar.minProbcut):
+                    #print('finalGals', finalGals,tGals['dp_dV'][:1]*obspar.minProbcut)
+                    if (finalGals['dp_dV'][:1] > tGals['dp_dV'][:1]*obspar.minProbcut):
                         if ((finalGals['dp_dV'][:1] < (2 * obspar.minProbcut)) and (sum(P_GWarray) > 0.40) and obspar.secondRound):
-                            print('probability', finalGals['dp_dV'][:1])
                             visible, altaz, tGals_aux2 = VisibleAtTime(
                                 ObservationTime, tGals_aux2, obspar.maxZenith, obspar.location)
                             if (visible):
@@ -393,7 +389,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                                 if not obspar.useGreytime:
                                     finalGals2 = visiGals2[mask]
                                 p_gal, p_gw, tGals_aux2, alreadysumipixarray2 = ComputeProbGalTargetted(
-                                    prob, ObservationTime, finalGals, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz, obspar, counter, name, dirName)
+                                    prob, ObservationTime, finalGals2, visiGals2, tGals_aux2, sum_dP_dV, alreadysumipixarray2, nside, minz, obspar, counter, dirName)
 
                                 RAarray.append(float('{:3.4f}'.format(
                                     float(finalGals2['RAJ2000'][:1]))))
@@ -407,7 +403,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
 
                             else:  
                                 p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbGalTargetted(
-                                    prob, ObservationTime, finalGals, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz, obspar, counter, name, dirName)
+                                    prob, ObservationTime, finalGals, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz,obspar,counter, dirName)
                                 RAarray.append(float('{:3.4f}'.format(
                                     float(finalGals['RAJ2000'][:1]))))
                                 DECarray.append(float('{:3.4f}'.format(
@@ -419,19 +415,13 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                                 counter = counter + 1
                         else:
                             print("We are in round 1")
-                            # print("\n=================================")
-                            # print("TARGET COORDINATES AND DETAILS...")
-                            # print("=================================")
-                            # print(finalGals['RAJ2000', 'DEJ2000', 'Bmag', 'Dist', 'Alt', 'dp_dV','dp_dV_FOV'][:1])
-                            p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbPGALIntegrateFoV(
-                                prob, ObservationTime, obspar.location, finalGals, False, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz, obspar, counter, name, dirName, obspar.doPlot)
-
+                            p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbGalTargetted(
+                                    prob, ObservationTime, finalGals, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz, obspar, counter, dirName)
                             RAarray.append(float('{:3.4f}'.format(
                                 float(finalGals['RAJ2000'][:1]))))
                             DECarray.append(float('{:3.4f}'.format(
                                 float(finalGals['DEJ2000'][:1]))))
                             Round.append(1)
-
                             P_GALarray.append(float('{:1.4f}'.format(p_gal)))
                             P_GWarray.append(float('{:1.4f}'.format(p_gw)))
                             ObservationTimearray.append(ObservationTime.strftime("%Y-%m-%d %H:%M:%S"))

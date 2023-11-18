@@ -103,10 +103,12 @@ def getSchedule(obspar):
             ascii.write(SuggestedPointings, outfilename,
                         overwrite=True, fast_writer=False)
             print()
-            RankingTimes(obspar.obsTime, filename, cat, obspar, obspar.alertType, dirName,
-                         '%s/SuggestedPointings_GalProbOptimisation.txt' % dirName, obspar.name)
-            PointingPlotting(prob, obspar, name, dirName,
-                             '%s/SuggestedPointings_GalProbOptimisation.txt' % dirName, obspar.name, filename)
+            if(obspar.doRank):
+                RankingTimes(obspar.obsTime, filename, cat, obspar, obspar.alertType, dirName,
+                            '%s/SuggestedPointings_GalProbOptimisation.txt' % dirName, obspar.name)
+            if(obspar.doPlot):
+                PointingPlotting(prob, obspar, name, dirName,
+                                '%s/SuggestedPointings_GalProbOptimisation.txt' % dirName, obspar.name, filename)
         else:
             FOLLOWUP = False
             print('No observations are scheduled')
@@ -134,10 +136,12 @@ def getSchedule(obspar):
             ascii.write(SuggestedPointings, outfilename,
                         overwrite=True, fast_writer=False)
             print()
-            RankingTimes_2D(obspar.obsTime, prob, obspar, obspar.alertType, dirName,
-                            '%s/SuggestedPointings_2DProbOptimisation.txt' % dirName, obspar.name)
-            PointingPlotting(prob, obspar, name, dirName,
-                             '%s/SuggestedPointings_2DProbOptimisation.txt' % dirName, obspar.name, filename)
+            if(obspar.doRank):
+                RankingTimes_2D(obspar.obsTime, prob, obspar, obspar.alertType, dirName,
+                                '%s/SuggestedPointings_2DProbOptimisation.txt' % dirName, obspar.name)
+            if(obspar.doPlot):
+                PointingPlotting(prob, obspar, name, dirName,
+                                '%s/SuggestedPointings_2DProbOptimisation.txt' % dirName, obspar.name, filename)
         else:
             FOLLOWUP = False
             print('No observations are scheduled')
