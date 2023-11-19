@@ -276,11 +276,8 @@ class Tools:
             n = lat + (1.0/13) * lon
         elif (lat >= -10 and lat <= 0 and lon >= 240):
             n = lat + (1.0/12) * lon - 20
-        #print(n)
         if np.absolute(n) <= 10:
             YouAreInside = True
-            # print('You got here')
-        #print(YouAreInside)
         return YouAreInside
 
     @classmethod
@@ -1085,7 +1082,6 @@ def Check2Dor3D(fitsfile, filename, obspar):
     obspar.MO = IsMultiOrder(fitsfile[1].header['TFIELDS'])
     if (fitsfile[1].header['TFIELDS'] <= 2):
         has3D = False
-        print('aqui0')
     else:
         tdistmean = fitsfile[1].header['DISTMEAN']
         tdiststd= fitsfile[1].header['DISTSTD']
@@ -1106,16 +1102,16 @@ def Check2Dor3D(fitsfile, filename, obspar):
     # Check if the hotspot is in the galactic plane
     npix = len(prob)
     NSide = hp.npix2nside(npix)
-    if obspar.algorithm == None:
-        MaxPix = np.argmax(prob)
-        MaxTheta, MaxPhi = hp.pix2ang(NSide, MaxPix)
-        raMax = np.rad2deg(MaxPhi)
-        decMax = np.rad2deg(0.5 * np.pi - MaxTheta)
-        c_icrs = SkyCoord(raMax, decMax, frame='fk5', unit=(u.deg, u.deg))
+    MaxPix = np.argmax(prob)
+    MaxTheta, MaxPhi = hp.pix2ang(NSide, MaxPix)
+    raMax = np.rad2deg(MaxPhi)
+    decMax = np.rad2deg(0.5 * np.pi - MaxTheta)
+    c_icrs = SkyCoord(raMax, decMax, frame='fk5', unit=(u.deg, u.deg))
 
-        InsidePlane = Tools.GalacticPlaneBorder(c_icrs)
-        if InsidePlane:
-            has3D = False 
+    InsidePlane = Tools.GalacticPlaneBorder(c_icrs)
+    print('Is the hotspot in the galactic plane?',InsidePlane)
+    if InsidePlane:
+        has3D = False 
     fitsfile.close()
     return prob, has3D, NSide
 
@@ -1162,9 +1158,9 @@ def Check2Dor3D_Flat(fitsfile, filename, obspar):
         c_icrs = SkyCoord(raMax, decMax, frame='fk5', unit=(u.deg, u.deg))
 
         InsidePlane = Tools.GalacticPlaneBorder(c_icrs)
+        print('Is the hotspot in the galactic plane?',InsidePlane)
         if InsidePlane:
             has3D = False
-
     return prob, has3D, NSide
 
 ######################################################
@@ -1955,7 +1951,7 @@ def ComputeProbBCFOVSimple(prob, time, observatory, visiGals, allGals, tsum_dP_d
         # plt.show()
         # Draw MinZ area
 
-        print('Min Zenith= ', thisminz)
+        #print('Min Zenith= ', thisminz)
 
         altcoordmin = np.empty(4000)
         azcoordmin = np.random.rand(4000) * 360
@@ -2095,22 +2091,17 @@ def ComputeProbGalTargetted(prob, time, finalGals, visiGals, allGals, tsum_dP_dV
         # hp.visufunc.projplot(RandomCoord_radec.ra, RandomCoord_radec.dec, 'b.', lonlat=True, coord="C")
         # Draw MinZ area
 
-        print('Min Zenith= ', thisminz)
+        #print('Min Zenith= ', thisminz)
 
         altcoordmin = np.empty(4000)
-
         altcoordmin.fill(90 - thisminz)
-
         azcoordmin = np.random.rand(4000) * 360
 
         RandomCoordmin = SkyCoord(azcoordmin, altcoordmin, frame='altaz', unit=(u.deg, u.deg), obstime=time,
                                     location=observatory)
-
-        RandomCoordmin_radec = RandomCoordmin.transform_to('fk5')
-
+        
+        #RandomCoordmin_radec = RandomCoordmin.transform_to('fk5')
         # hp.visufunc.projplot(RandomCoordmin_radec.ra, RandomCoordmin_radec.dec, 'y.', lonlat=True, coord="C")
-
-        # plt.show()
         plt.savefig("%s/Zoom_Pointing_%g.png" % (path, counter))
 
     return P_Gal, P_GW, noncircleGal, talreadysumipixarray
@@ -2414,7 +2405,7 @@ def ComputeProbPGALIntegrateFoV(prob, time, observatory, centerPoint, UsePix, vi
         # hp.visufunc.projplot(RandomCoord_radec.ra, RandomCoord_radec.dec, 'b.', lonlat=True, coord="C")
         # Draw MinZ area
 
-        print('Min Zenith= ', thisminz)
+        #print('Min Zenith= ', thisminz)
 
         altcoordmin = np.empty(4000)
 

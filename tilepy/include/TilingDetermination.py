@@ -169,12 +169,9 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
     """
 
     # Main Parameters
-
     print(obspar)
 
     # load galaxy catalog from local file
-    # this could be done at the beginning of the night to save time
-
     if not obspar.mangrove:
         cat = LoadGalaxies(galFile)
     else:
@@ -213,7 +210,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
         tGals = tGals0
         print('No pointings were given to be substracted')
     else:
-        # tGals_aux = tGals
+
         ra, dec, tGals, AlreadyObservedPgw, AlreadyObservedPgal, alreadysumipixarray1 = SubstractPointings(
             PointingFile, tGals0, alreadysumipixarray1, sum_dP_dV, obspar.FOV, prob, nside)
         # for second round
@@ -222,8 +219,6 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
         sumPGW = sum(AlreadyObservedPgw)
         sumPGAL = sum(AlreadyObservedPgal)
 
-        # ObservedPointings = Table([time, ra, dec, AlreadyObservedPgw, AlreadyObservedPgal],names=['Observation Time UTC', 'RA(deg)', 'DEC(deg)', 'Covered GW probability','Pgal covered'])
-        # print(ObservedPointings)
         print("===========================================================================================")
         print()
         print(
@@ -253,8 +248,6 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
     else:
         NightDarkRuns = NightDarkObservation(ObservationTime0, obspar)
 
-    # print('EffectiveRunsTime',len(NightDarkRuns),'being',NightDarkRuns)
-    print('yo are here',obspar.strategy,obspar.strategy == 'targetted')
     totalProb = 0.
     counter = 0
     if(obspar.strategy == 'integrated'):
@@ -283,7 +276,6 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
 
                     if (finalGals['dp_dV_FOV'][:1] > obspar.minProbcut):
                         # final galaxies within the FoV
-                        # This notes LIGOVirgo type of signal
                         if ((finalGals['dp_dV_FOV'][:1] < (2 * obspar.minProbcut)) and (sum(P_GWarray) > 0.40) and obspar.secondRound):
                             visible, altaz, tGals_aux2 = VisibleAtTime(
                                 ObservationTime, tGals_aux2, obspar.maxZenith, obspar.location)
@@ -316,7 +308,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                                 ObservationTimearray.append(ObservationTime.strftime("%Y-%m-%d %H:%M:%S"))
                                 counter = counter + 1
 
-                            else:  # NOTE: not sure if this should be added
+                            else: 
                                 p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbPGALIntegrateFoV(
                                     prob, ObservationTime, obspar.location, finalGals, False, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz, obspar, counter, name, dirName, obspar.doPlot)
                                 RAarray.append(float('{:3.4f}'.format(
@@ -329,7 +321,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                                 ObservationTimearray.append(ObservationTime.strftime("%Y-%m-%d %H:%M:%S"))
                                 counter = counter + 1
                         else:
-                            print("We are in round 1")
+                            # print("We are in round 1")
                             # print("\n=================================")
                             # print("TARGET COORDINATES AND DETAILS...")
                             # print("=================================")
@@ -341,7 +333,6 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                             DECarray.append(float('{:3.4f}'.format(
                                 float(finalGals['DEJ2000'][:1]))))
                             Round.append(1)
-
                             P_GALarray.append(float('{:1.4f}'.format(p_gal)))
                             P_GWarray.append(float('{:1.4f}'.format(p_gw)))
                             ObservationTimearray.append(ObservationTime.strftime("%Y-%m-%d %H:%M:%S"))
@@ -414,7 +405,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                                 ObservationTimearray.append(ObservationTime.strftime("%Y-%m-%d %H:%M:%S"))
                                 counter = counter + 1
                         else:
-                            print("We are in round 1")
+                            #print("We are in round 1")
                             p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbGalTargetted(
                                     prob, ObservationTime, finalGals, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz, obspar, counter, dirName)
                             RAarray.append(float('{:3.4f}'.format(
@@ -432,14 +423,14 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
             else:
                 break
         
-
-
-    print()
-    print("===========================================================================================")
-    print()
     # List of suggested pointings
     SuggestedPointings = Table([ObservationTimearray, RAarray, DECarray, P_GWarray, P_GALarray, Round], names=[
                                'Observation Time UTC', 'RA[deg]', 'DEC[deg]', 'PGW', 'Pgal', 'Round'])
+    print()
+    print("================================= Tiling found =============================================")
+    print(SuggestedPointings)
+    print("===========================================================================================")
+    print()
     return SuggestedPointings, cat
 
 
