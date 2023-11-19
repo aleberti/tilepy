@@ -1,9 +1,9 @@
 from .PointingTools import (NightDarkObservation, SelectObservatory_fromHotspot,
                             NightDarkObservationwithGreyTime, LoadHealpixMap, LoadHealpixUNIQMap,
                             Get90RegionPixReduced, ZenithAngleCut, ComputeProbability2D,
-                            FulfillsRequirement, VisibleAtTime, LoadGalaxies, CorrelateGalaxies_LVC, SubstractPointings2D, SimpleGWprob, ComputeProbGalTargetted,
+                            FulfillsRequirement, VisibleAtTime, LoadGalaxies, CorrelateGalaxies_LVC, SubstractPointings2D, SimpleGWprob, ComputeProbGalTargeted,
                             Tools, LoadGalaxies_SteMgal, CorrelateGalaxies_LVC_SteMass, SubstractPointings,
-                            ModifyCatalogue, FulfillsRequirementGreyObservations, ComputeProbPGALIntegrateFoV,ComputeProbGalTargetted,
+                            ModifyCatalogue, FulfillsRequirementGreyObservations, ComputeProbPGALIntegrateFoV,ComputeProbGalTargeted,
                             ModifyCataloguePIX, ObservationParameters, NextWindowTools,
                             ComputeProbability2D_SelectClusters, GiveProbToGalaxy, LoadGalaxiesSimulation)
 from .Observatories import CTASouthObservatory, CTANorthObservatory
@@ -342,7 +342,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                         print("NOT passing the cut on dp/dV_FOV > ", obspar.minProbcut)
             else:
                 break
-    if(obspar.strategy == 'targetted'):
+    if(obspar.strategy == 'targeted'):
         for j, NightDarkRun in enumerate(NightDarkRuns):
             if (len(ObservationTimearray) < obspar.maxRuns):
                 ObservationTime = NightDarkRun
@@ -379,7 +379,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                                     finalGals2 = visiGals2[mask & maskgrey]
                                 if not obspar.useGreytime:
                                     finalGals2 = visiGals2[mask]
-                                p_gal, p_gw, tGals_aux2, alreadysumipixarray2 = ComputeProbGalTargetted(
+                                p_gal, p_gw, tGals_aux2, alreadysumipixarray2 = ComputeProbGalTargeted(
                                     prob, ObservationTime, finalGals2, visiGals2, tGals_aux2, sum_dP_dV, alreadysumipixarray2, nside, minz, obspar, counter, dirName)
 
                                 RAarray.append(float('{:3.4f}'.format(
@@ -393,7 +393,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                                 counter = counter + 1
 
                             else:  
-                                p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbGalTargetted(
+                                p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbGalTargeted(
                                     prob, ObservationTime, finalGals, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz,obspar,counter, dirName)
                                 RAarray.append(float('{:3.4f}'.format(
                                     float(finalGals['RAJ2000'][:1]))))
@@ -406,7 +406,7 @@ def PGalinFoV(filename,ObservationTime0,PointingFile,galFile,obspar,dirName):
                                 counter = counter + 1
                         else:
                             #print("We are in round 1")
-                            p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbGalTargetted(
+                            p_gal, p_gw, tGals_aux, alreadysumipixarray1 = ComputeProbGalTargeted(
                                     prob, ObservationTime, finalGals, visiGals, tGals_aux, sum_dP_dV, alreadysumipixarray1, nside, minz, obspar, counter, dirName)
                             RAarray.append(float('{:3.4f}'.format(
                                 float(finalGals['RAJ2000'][:1]))))
