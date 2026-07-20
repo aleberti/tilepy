@@ -34,7 +34,7 @@ dependencies = [
           'astropy',
           'scipy<1.14.0',
           'numpy',
-          'healpy==1.16.2',
+          'healpy>=1.16.2,<2',
           'ipython',
           'matplotlib<3.9.0',
           'MOCpy',
@@ -177,6 +177,6 @@ ignore-words-list = """
 package = true
 
 override-dependencies = [
-    'healpy>=1.17.0',
+    'healpy>=1.16.2,<2',
     "setuptools>=64,<71",
 ]
