@@ -39,8 +39,8 @@ If you prefer to avoid conda and use a virtual environment with your favorite py
 ```
 python -m venv tilepy_venv
 source tilepy_venv/bin/activate
-pip3 install --upgrade pip
-python -m pip install -r requirements.txt
+pip install --upgrade pip
+pip install .
 ```
 
 Requirements of the installation:
