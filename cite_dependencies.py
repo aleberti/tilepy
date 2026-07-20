@@ -7,7 +7,7 @@ import requests
 try:
     import tomllib  # Python 3.11+
 except ImportError:
-    import tomli as tomllib   # Python 3.9, 3.10
+    import tomli as tomllib  # Python 3.9, 3.10
 
 
 def get_authors_from_github(repo_path, title, url):
